@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f7fb" />
+    <title>NotePlanner · 笔记管理面板</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand"><span class="brand-mark">N</span><span>NotePlanner</span></div>
+        <button class="new-note" id="new-note"><span>＋</span> 新建笔记 <kbd>N</kbd></button>
+        <nav class="main-nav" aria-label="主导航">
+          <a class="nav-item active" href="#all-notes"><span class="nav-icon">▤</span> 所有笔记 <strong>24</strong></a>
+          <a class="nav-item" href="#favorites"><span class="nav-icon">☆</span> 收藏夹 <strong>6</strong></a>
+          <a class="nav-item" href="#archive"><span class="nav-icon">□</span> 归档 <strong>12</strong></a>
+          <a class="nav-item" href="#trash"><span class="nav-icon">♧</span> 回收站</a>
+        </nav>
+        <div class="sidebar-section">
+          <div class="section-label">标签 <button aria-label="添加标签">＋</button></div>
+          <a class="tag-link" href="#work"><span class="tag-dot coral"></span>工作</a>
+          <a class="tag-link" href="#ideas"><span class="tag-dot purple"></span>灵感</a>
+          <a class="tag-link" href="#reading"><span class="tag-dot blue"></span>阅读</a>
+          <a class="tag-link" href="#life"><span class="tag-dot green"></span>生活</a>
+        </div>
+        <div class="sidebar-footer"><div class="profile"><span class="avatar">L</span><span><b>Lin</b><small>个人空间</small></span><span class="more">•••</span></div></div>
+      </aside>
+
+      <main class="content" id="all-notes">
+        <header class="topbar"><div class="breadcrumbs"><span>我的空间</span><i>/</i><b>所有笔记</b></div><div class="top-actions"><button class="icon-button" aria-label="切换主题" id="theme-toggle">◐</button><button class="icon-button" aria-label="设置">⚙</button><div class="mini-avatar">L</div></div></header>
+        <section class="page-heading"><div><p class="eyebrow">THURSDAY, JUNE 12, 2025</p><h1>所有笔记 <span>24</span></h1><p class="subtitle">记录想法，整理思绪，让每个灵感都有归处。</p></div><button class="view-toggle" id="view-toggle"><span>▦</span> 网格视图 <span class="chevron">⌄</span></button></section>
+
+        <section class="toolbar"><div class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="搜索笔记..." /><kbd>⌘ K</kbd></div><div class="filter-actions"><button class="filter-button" id="filter-button">↕ <span>最近更新</span>⌄</button><button class="filter-button" id="filter-tag">标签⌄</button></div></section>
+        <div class="filter-menu hidden" id="filter-menu"><button data-sort="recent">最近更新</button><button data-sort="oldest">最早创建</button><button data-sort="az">标题 A-Z</button></div>
+
+        <section class="notes-grid" id="notes-grid" aria-live="polite"></section>
+        <div class="empty-state hidden" id="empty-state"><div>⌕</div><h2>没有找到笔记</h2><p>试试其他关键词，或新建一篇笔记。</p></div>
+        <footer class="content-footer"><span><span class="sync-dot"></span> 已同步</span><span>共 24 篇笔记</span></footer>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
