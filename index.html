@@ -11,16 +11,13 @@
 </head>
 <body>
 <div class="app-shell">
-  <aside class="sidebar">
+  <!-- ========== 侧边栏 ========== -->
+  <aside class="sidebar" id="sidebar">
     <div class="brand"><span class="brand-mark">N</span><span>NotePlanner</span></div>
-    <button class="new-note" id="new-collection"><span>＋</span> 新建聚合体 <kbd>N</kbd></button>
     <nav class="main-nav" aria-label="主导航">
-      <a class="nav-item active" href="#all-notes"><span class="nav-icon">▤</span> 所有笔记 <strong>6</strong></a>
-      <a class="nav-item" href="#collections" id="collections-nav"><span class="nav-icon">▦</span> 聚合体 <strong id="nav-collection-count">3</strong></a>
-      <a class="nav-item" href="#notes" id="notes-nav"><span class="nav-icon">☷</span> 笔记列表 <strong id="nav-note-count">6</strong></a>
-      <a class="nav-item" href="#favorites"><span class="nav-icon">☆</span> 收藏夹 <strong>2</strong></a>
-      <a class="nav-item" href="#archive"><span class="nav-icon">□</span> 归档 <strong>1</strong></a>
-      <a class="nav-item" href="#trash"><span class="nav-icon">♧</span> 回收站</a>
+      <a class="nav-item" href="#collections" id="nav-collections"><span class="nav-icon">▦</span> 聚合体 <strong id="nav-collection-count">3</strong></a>
+      <a class="nav-item" href="#loose" id="nav-loose"><span class="nav-icon">▤</span> 零散笔记 <strong id="nav-loose-count">0</strong></a>
+      <a class="nav-item" href="#trash" id="nav-trash"><span class="nav-icon">♧</span> 回收站 <strong id="nav-trash-count">0</strong></a>
     </nav>
     <div class="sidebar-section">
       <div class="section-label">标签 <button aria-label="添加标签">＋</button></div>
@@ -29,35 +26,82 @@
       <a class="tag-link" href="#reading"><span class="tag-dot blue"></span>阅读</a>
       <a class="tag-link" href="#life"><span class="tag-dot green"></span>生活</a>
     </div>
-    <div class="sidebar-footer"><div class="profile"><span class="avatar">L</span><span><b>Lin</b><small>个人空间</small></span><span class="more">•••</span></div></div>
+    <div class="sidebar-footer">
+      <button class="sidebar-action-btn" id="btn-settings" title="设置"><span>⚙</span> 设置</button>
+      <button class="sidebar-action-btn collapse-btn" id="btn-collapse" title="收起菜单栏"><span>◀</span> 收起</button>
+    </div>
   </aside>
 
-  <main class="content" id="all-notes">
-    <header class="topbar"><div class="breadcrumbs"><span>我的空间</span><i>/</i><b>所有笔记</b></div><div class="top-actions"><button class="icon-button" id="theme-toggle">◐</button><button class="icon-button">⚙</button><div class="mini-avatar">L</div></div></header>
-    <section class="page-heading"><div><p class="eyebrow">THURSDAY, JUNE 12, 2025</p><h1>笔记聚合体 <span id="collection-count">3</span></h1><p class="subtitle">先建立结构，再慢慢填充你的想法。</p></div><button class="view-toggle" id="view-toggle"><span>▦</span> 聚合视图 <span class="chevron">⌄</span></button></section>
-    <section class="toolbar"><div class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="搜索聚合体或笔记..." /><kbd>⌘ K</kbd></div><div class="filter-actions"><button class="filter-button" id="filter-button">↕ <span>最近更新</span>⌄</button><button class="filter-button" id="filter-tag">标签⌄</button></div></section>
-    <div class="filter-menu hidden" id="filter-menu"><button data-sort="recent">最近更新</button><button data-sort="oldest">最早创建</button><button data-sort="az">标题 A-Z</button></div>
-    <div class="workspace">
-      <section class="collections-panel"><div class="panel-heading"><span>我的聚合体</span><div class="panel-actions"><button id="add-note">＋ 笔记</button><button id="add-collection">＋ 新建</button></div></div><div id="collections-list"></div></section>
-      <section class="editor-panel" id="editor-panel">
-        <div class="editor-header"><div><p class="eyebrow">MARKDOWN NOTE</p><h2 id="editor-title">选择一篇笔记</h2></div><div class="editor-actions"><span class="save-status" id="save-status">已保存</span><button id="preview-toggle">预览</button><button id="note-menu">•••</button></div></div>
-        <div class="editor-body"><textarea id="markdown-editor" spellcheck="false" placeholder="选择一篇笔记后开始编辑 Markdown..."></textarea><article class="markdown-preview hidden" id="markdown-preview"></article></div>
-        <div class="editor-footer"><span>支持 Markdown · 自动保存</span><span id="word-count">0 字</span></div>
-      </section>
-    </div>
+  <!-- ========== 侧边栏浮窗（收起后显示） ========== -->
+  <button class="sidebar-fab" id="sidebar-fab" title="展开菜单栏"><span>N</span></button>
+
+  <!-- ========== 主内容区 ========== -->
+  <main class="content" id="main-content">
+    <header class="topbar">
+      <div class="breadcrumbs" id="breadcrumbs"><span>我的空间</span><i>/</i><b>聚合体</b></div>
+      <div class="top-actions"><button class="icon-button" id="theme-toggle">◐</button><div class="mini-avatar">L</div></div>
+    </header>
+
+    <!-- ========== 聚合体视图 ========== -->
+    <section class="view view-collections active" id="view-collections">
+      <section class="page-heading"><div><p class="eyebrow">FRIDAY, AUGUST 1, 2025</p><h1>笔记聚合体 <span id="collection-count">3</span></h1><p class="subtitle">先建立结构，再慢慢填充你的想法。</p></div></section>
+      <section class="toolbar"><div class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="搜索聚合体或笔记..." /><kbd>⌘ K</kbd></div><div class="filter-actions"><button class="filter-button" id="filter-button">↕ <span>最近更新</span>⌄</button></div></section>
+      <div class="filter-menu hidden" id="filter-menu"><button data-sort="recent">最近更新</button><button data-sort="oldest">最早创建</button><button data-sort="az">标题 A-Z</button></div>
+      <div class="workspace">
+        <section class="group-tree-panel">
+          <div class="panel-heading"><span>组视图</span><button id="add-group" title="新建分组">＋</button></div>
+          <div id="group-tree"></div>
+        </section>
+        <section class="collections-panel">
+          <div class="panel-heading"><span>我的聚合体</span><div class="panel-actions"><button id="add-collection">＋ 新建</button></div></div>
+          <div id="collections-list"></div>
+        </section>
+        <section class="editor-panel" id="editor-panel">
+          <div class="editor-header"><div><p class="eyebrow">MARKDOWN NOTE</p><h2 id="editor-title">选择一篇笔记</h2></div><div class="editor-actions"><span class="save-status" id="save-status">已保存</span><button id="preview-toggle">预览</button></div></div>
+          <div class="editor-body"><textarea id="markdown-editor" spellcheck="false" placeholder="选择一篇笔记后开始编辑 Markdown..."></textarea><article class="markdown-preview hidden" id="markdown-preview"></article></div>
+          <div class="editor-footer"><span>支持 Markdown · 自动保存</span><span id="word-count">0 字</span></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ========== 零散笔记视图 ========== -->
+    <section class="view view-loose" id="view-loose">
+      <section class="page-heading"><div><p class="eyebrow">FRIDAY, AUGUST 1, 2025</p><h1>零散笔记 <span id="loose-note-count">0</span></h1><p class="subtitle">不属于任何聚合体的独立笔记。</p></div></section>
+      <section class="toolbar"><div class="search-box"><span>⌕</span><input id="loose-search" type="search" placeholder="搜索笔记..." /></div><div class="filter-actions"><button class="filter-button" id="add-loose-note">＋ 新建笔记</button></div></section>
+      <div class="workspace-loose">
+        <section class="loose-list-panel">
+          <div class="panel-heading"><span>笔记列表</span></div>
+          <div id="loose-notes-list"></div>
+        </section>
+        <section class="editor-panel" id="loose-editor-panel">
+          <div class="editor-header"><div><p class="eyebrow">MARKDOWN NOTE</p><h2 id="loose-editor-title">选择一篇笔记</h2></div><div class="editor-actions"><span class="save-status" id="loose-save-status">已保存</span><button id="loose-preview-toggle">预览</button></div></div>
+          <div class="editor-body"><textarea id="loose-markdown-editor" spellcheck="false" placeholder="选择一篇笔记后开始编辑 Markdown..."></textarea><article class="markdown-preview hidden" id="loose-markdown-preview"></article></div>
+          <div class="editor-footer"><span>支持 Markdown · 自动保存</span><span id="loose-word-count">0 字</span></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ========== 回收站视图 ========== -->
+    <section class="view view-trash" id="view-trash">
+      <section class="page-heading"><div><p class="eyebrow">FRIDAY, AUGUST 1, 2025</p><h1>回收站 <span id="trash-count-heading">0</span></h1><p class="subtitle">最近删除的笔记，最多保留 <b id="trash-limit-display">30</b> 篇。</p></div></section>
+      <section class="toolbar"><div class="search-box"><span>⌕</span><input id="trash-search" type="search" placeholder="搜索已删除笔记..." /></div><div class="filter-actions"><button class="filter-button danger" id="btn-empty-trash">清空回收站</button></div></section>
+      <div class="trash-list" id="trash-list"></div>
+    </section>
+
     <footer class="content-footer"><span><span class="sync-dot"></span> 已同步</span><span>共 <b id="note-count">6</b> 篇笔记</span></footer>
   </main>
 </div>
-<div class="modal-backdrop hidden" id="collection-modal">
-  <form class="modal" id="collection-form">
-    <div class="modal-header"><div><p class="eyebrow">NEW COLLECTION</p><h2>新建聚合体</h2></div><button type="button" class="modal-close" id="close-modal">×</button></div>
-    <label>聚合体名称<input name="title" required maxlength="40" placeholder="例如：产品研究" /></label>
-    <label>描述<textarea name="description" maxlength="100" placeholder="简单描述这个聚合体的用途"></textarea></label>
-    <label>预置笔记模板<select name="template"><option value="3">3 篇基础模板</option><option value="1">1 篇空白笔记</option><option value="0">暂不创建笔记</option></select></label>
-    <div class="modal-footer"><button type="button" class="cancel-button" id="cancel-modal">取消</button><button class="submit-button" type="submit">创建聚合体</button></div>
-  </form>
+
+<!-- ========== 统一弹窗容器 ========== -->
+<div class="modal-backdrop hidden" id="modal-backdrop">
+  <div class="modal" id="modal-container">
+    <!-- 动态内容注入 -->
+  </div>
 </div>
+
+<!-- ========== Toast ========== -->
 <div class="toast" id="toast" role="status"></div>
+
 <script src="app.js"></script>
 </body>
 </html>
