@@ -8,3 +8,4 @@ test_workspace/
 .vscode/
 .idea/
 launcher.vbs
+*.rar
