@@ -1043,14 +1043,18 @@ function scheduleSyncToWorkspace() {
 }
 async function syncToWorkspace() {
   try {
-    await fetch('/api/workspace', {
+    const res = await fetch('/api/workspace', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({groups, looseNotes, trash})
     });
+    if (!res.ok) {
+      console.error('Workspace sync failed:', res.status);
+    }
   } catch (e) {
-    // 静默失败，不打扰用户
+    console.error('Workspace sync error:', e);
   }
+}
 }
 $('#markdown-editor').addEventListener('input', e => {
   if (!selectedNote) return;
