@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=7" />
 </head>
 <body>
 <div class="app-shell">
@@ -15,9 +15,9 @@
   <aside class="sidebar" id="sidebar">
     <div class="brand"><span class="brand-mark">N</span><span>NotePlanner</span></div>
     <nav class="main-nav" aria-label="主导航">
-      <a class="nav-item" href="#collections" id="nav-collections"><span class="nav-icon">▦</span> 聚合体 <strong id="nav-collection-count">3</strong></a>
-      <a class="nav-item" href="#loose" id="nav-loose"><span class="nav-icon">▤</span> 零散笔记 <strong id="nav-loose-count">0</strong></a>
-      <a class="nav-item" href="#trash" id="nav-trash"><span class="nav-icon">♧</span> 回收站 <strong id="nav-trash-count">0</strong></a>
+      <a class="nav-item" href="#collections" id="nav-collections"><span class="nav-icon">▦</span> 聚合体</a>
+      <a class="nav-item" href="#loose" id="nav-loose"><span class="nav-icon">▤</span> 零散笔记</a>
+      <a class="nav-item" href="#trash" id="nav-trash"><span class="nav-icon">♧</span> 回收站</a>
     </nav>
     <div class="sidebar-section">
       <div class="section-label">标签 <button aria-label="添加标签">＋</button></div>
@@ -44,9 +44,8 @@
 
     <!-- ========== 聚合体视图 ========== -->
     <section class="view view-collections active" id="view-collections">
-      <section class="page-heading"><div><h1>笔记聚合体 <span id="collection-count">3</span></h1></div></section>
-      <section class="toolbar"><div class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="搜索聚合体或笔记..." /></div><div class="filter-actions"><button class="filter-button" id="filter-button">↕ <span>最近更新</span>⌄</button></div></section>
-      <div class="filter-menu hidden" id="filter-menu"><button data-sort="recent">最近更新</button><button data-sort="oldest">最早创建</button><button data-sort="az">标题 A-Z</button></div>
+      <section class="page-heading"><div><h1>笔记聚合体</h1></div></section>
+      <section class="toolbar"><div class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="搜索聚合体或笔记..." /></div></section>
       <div class="workspace">
         <section class="group-tree-panel">
           <div class="panel-heading"><span>组视图</span><button id="add-group" title="新建分组">＋</button></div>
@@ -66,7 +65,7 @@
 
     <!-- ========== 零散笔记视图 ========== -->
     <section class="view view-loose" id="view-loose">
-      <section class="page-heading"><div><h1>零散笔记 <span id="loose-note-count">0</span></h1></div></section>
+      <section class="page-heading"><div><h1>零散笔记</h1></div></section>
       <section class="toolbar"><div class="search-box"><span>⌕</span><input id="loose-search" type="search" placeholder="搜索笔记..." /></div><div class="filter-actions"><button class="filter-button" id="add-loose-note">＋ 新建笔记</button></div></section>
       <div class="workspace-loose">
         <section class="loose-list-panel">
@@ -83,7 +82,7 @@
 
     <!-- ========== 回收站视图 ========== -->
     <section class="view view-trash" id="view-trash">
-      <section class="page-heading"><div><h1>回收站 <span id="trash-count-heading">0</span></h1></div></section>
+      <section class="page-heading"><div><h1>回收站</h1></div></section>
       <section class="toolbar"><div class="search-box"><span>⌕</span><input id="trash-search" type="search" placeholder="搜索已删除笔记..." /></div><div class="filter-actions"><button class="filter-button danger" id="btn-empty-trash">清空回收站</button></div></section>
       <div class="trash-list" id="trash-list"></div>
     </section>

@@ -1,24 +1,31 @@
 // ==================== 数据模型 ====================
 const groups = [
-  { id: 'g-work', title: '工作', expanded: true, collections: [
+  { id: 'g-work', title: '工作', expanded: true, pinned: false, collections: [
     { id: 'product', title: '产品与工作', description: '工作中的思考、计划与复盘', color: 'coral', notesExpanded: true, updated: '今天 09:42', notes: [
       { id: 'product-1', title: '关于个人知识管理的一些思考', content: '# 关于个人知识管理的一些思考\n\n信息不等于知识，知识也不等于智慧。\n\n## 我的三个原则\n\n- 让记录足够简单\n- 让回顾成为习惯\n- 让想法彼此连接', favorite: false },
       { id: 'product-2', title: '2025 年第二季度目标', content: '# 2025 年第二季度目标\n\n> 少做一点，但做深。\n\n## 重点方向\n\n- 完成产品新版本\n- 每周留出半天深度工作\n- 建立稳定的复盘习惯', favorite: false },
       { id: 'product-3', title: '设计系统学习笔记', content: '# 设计系统学习笔记\n\n好的设计系统不是限制创造力，而是让团队把精力用在更重要的地方。', favorite: false }
     ]}
   ]},
-  { id: 'g-read', title: '阅读', expanded: true, collections: [
+  { id: 'g-read', title: '阅读', expanded: true, pinned: false, collections: [
     { id: 'reading', title: '阅读与输入', description: '书籍、文章和值得保留的观点', color: 'blue', notesExpanded: true, updated: '6 月 10 日', notes: [
       { id: 'reading-1', title: '读《置身事内》', content: '# 读《置身事内》\n\n记录一些触动我的章节和观点。\n\n## 一个值得反复想的问题\n\n我们如何共同塑造身处的环境？', favorite: false },
       { id: 'reading-2', title: '待读清单', content: '# 待读清单\n\n- 《纳瓦尔宝典》\n- 《有限与无限的游戏》\n- 《卡片笔记写作法》', favorite: false }
     ]}
   ]},
-  { id: 'g-life', title: '生活', expanded: true, collections: [
+  { id: 'g-life', title: '生活', expanded: true, pinned: false, collections: [
     { id: 'life', title: '生活记录', description: '日记、旅行与生活中的小事', color: 'green', notesExpanded: true, updated: '6 月 08 日', notes: [
       { id: 'life-1', title: '周末去看展', content: '# 周末去看展\n\n很久没有留出一整天给自己了。看看展览，走走路，或许会有新的发现。', favorite: false }
     ]}
   ]}
 ];
+
+// 默认按首字母 A-Z 排序分组
+function sortGroupsAZ() {
+  groups.sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+  groups.forEach(g => g.collections.sort((a, b) => a.title.localeCompare(b.title, 'zh')));
+}
+sortGroupsAZ();
 
 const looseNotes = [];
 const trash = [];
@@ -30,7 +37,7 @@ let selectedGroup = groups[0];
 let selectedCollection = groups[0].collections[0];
 let selectedNote = selectedCollection.notes[0];
 let selectedLooseNote = null;
-let filteredGroups = groups;
+let filteredGroups = getSortedGroups();
 let filteredLooseNotes = looseNotes;
 let filteredTrash = trash;
 const $ = selector => document.querySelector(selector);
@@ -46,10 +53,10 @@ function findGroupOfCollection(collectionId) { for (const g of groups) { if (g.c
 function findCollectionById(id) { for (const g of groups) { const f = g.collections.find(c => c.id === id); if (f) return f; } return null; }
 
 // ==================== 统一弹窗系统 ====================
-function openModal(title, eyebrow, bodyHtml, footerHtml) {
+function openModal(title, bodyHtml, footerHtml) {
   const container = $('#modal-container');
   container.innerHTML = `
-    <div class="modal-header"><div><p class="eyebrow">${eyebrow || ''}</p><h2>${title}</h2></div><button type="button" class="modal-close" id="modal-close-btn">×</button></div>
+    <div class="modal-header"><h2>${title}</h2><button type="button" class="modal-close" id="modal-close-btn">×</button></div>
     <div class="modal-body">${bodyHtml}</div>
     <div class="modal-footer">${footerHtml || ''}</div>`;
   $('#modal-backdrop').classList.remove('hidden');
@@ -69,7 +76,7 @@ function openCreateCollectionModal() {
     <label>或新建分组<input id="mc-newgroup" maxlength="20" placeholder="输入新分组名称（可选）" /></label>
     <label>预置笔记模板<select id="mc-template"><option value="3">3 篇基础模板</option><option value="1">1 篇空白笔记</option><option value="0">暂不创建笔记</option></select></label>`;
   const footer = `<button class="cancel-button" id="mc-cancel">取消</button><button class="submit-button" id="mc-submit">创建聚合体</button>`;
-  openModal('新建聚合体', 'NEW COLLECTION', body, footer);
+  openModal('新建聚合体', body, footer);
   $('#mc-cancel').addEventListener('click', closeModal);
   $('#mc-submit').addEventListener('click', () => {
     const title = $('#mc-title').value.trim();
@@ -88,10 +95,11 @@ function openCreateCollectionModal() {
     selectedGroup = targetGroup;
     selectedCollection = collection;
     selectedNote = collection.notes[0] || null;
-    filteredGroups = groups;
+    filteredGroups = getSortedGroups();
     closeModal();
     renderGroupTree(); renderCollections(); renderEditor();
     showToast('聚合体已创建');
+    scheduleSyncToWorkspace();
   });
   setTimeout(() => $('#mc-title').focus(), 50);
 }
@@ -100,17 +108,19 @@ function openCreateCollectionModal() {
 function openCreateGroupModal() {
   const body = `<label>分组名称<input id="mg-title" maxlength="20" placeholder="例如：学习" /></label>`;
   const footer = `<button class="cancel-button" id="mg-cancel">取消</button><button class="submit-button" id="mg-submit">创建分组</button>`;
-  openModal('新建分组', 'NEW GROUP', body, footer);
+  openModal('新建分组', body, footer);
   $('#mg-cancel').addEventListener('click', closeModal);
   $('#mg-submit').addEventListener('click', () => {
     const title = $('#mg-title').value.trim();
     if (!title) { showToast('请输入分组名称'); return; }
-    const group = { id: `g-${Date.now()}`, title, expanded: true, collections: [] };
+    const group = { id: `g-${Date.now()}`, title, expanded: true, pinned: false, collections: [] };
     groups.push(group);
-    filteredGroups = groups;
+    sortGroupsAZ();
+    filteredGroups = getSortedGroups();
     closeModal();
     renderGroupTree();
     showToast('分组已创建');
+    scheduleSyncToWorkspace();
   });
   setTimeout(() => $('#mg-title').focus(), 50);
 }
@@ -119,7 +129,7 @@ function openCreateGroupModal() {
 function openCreateLooseNoteModal() {
   const body = `<label>笔记标题<input id="ml-title" maxlength="40" placeholder="例如：今天的灵感" /></label>`;
   const footer = `<button class="cancel-button" id="ml-cancel">取消</button><button class="submit-button" id="ml-submit">创建笔记</button>`;
-  openModal('新建笔记', 'NEW NOTE', body, footer);
+  openModal('新建笔记', body, footer);
   $('#ml-cancel').addEventListener('click', closeModal);
   $('#ml-submit').addEventListener('click', () => {
     const title = $('#ml-title').value.trim() || '未命名笔记';
@@ -130,6 +140,7 @@ function openCreateLooseNoteModal() {
     switchView('loose');
     renderLooseNotes(); renderLooseEditor();
     showToast('笔记已创建');
+    scheduleSyncToWorkspace();
   });
   setTimeout(() => $('#ml-title').focus(), 50);
 }
@@ -138,7 +149,7 @@ function openCreateLooseNoteModal() {
 function openCreateNoteModal() {
   const body = `<label>笔记标题<input id="mn-title" maxlength="40" placeholder="例如：灵感记录" /></label>`;
   const footer = `<button class="cancel-button" id="mn-cancel">取消</button><button class="submit-button" id="mn-submit">创建笔记</button>`;
-  openModal('新建笔记', 'NEW NOTE', body, footer);
+  openModal('新建笔记', body, footer);
   $('#mn-cancel').addEventListener('click', closeModal);
   $('#mn-submit').addEventListener('click', () => {
     const title = $('#mn-title').value.trim() || '未命名笔记';
@@ -151,6 +162,7 @@ function openCreateNoteModal() {
     closeModal();
     renderGroupTree(); renderCollections(); renderEditor();
     showToast('笔记已创建');
+    scheduleSyncToWorkspace();
   });
   setTimeout(() => $('#mn-title').focus(), 50);
 }
@@ -161,7 +173,7 @@ function openDeleteNoteModal(noteId, source) {
   if (!note) return;
   const body = `<p class="modal-text">确定删除笔记 <b>"${escapeHtml(note.title)}"</b> 吗？</p><p class="modal-subtext">删除后可在回收站找到，最多保留 ${settings.trashLimit} 篇。</p>`;
   const footer = `<button class="cancel-button" id="dn-cancel">取消</button><button class="danger-button" id="dn-confirm">删除</button>`;
-  openModal('删除笔记', 'DELETE NOTE', body, footer);
+  openModal('删除笔记', body, footer);
   $('#dn-cancel').addEventListener('click', closeModal);
   $('#dn-confirm').addEventListener('click', () => {
     addToTrash(note, source === 'loose' ? '零散笔记' : selectedCollection.title);
@@ -183,6 +195,7 @@ function openDeleteNoteModal(noteId, source) {
       renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
     }
     showToast('笔记已移入回收站');
+    scheduleSyncToWorkspace();
   });
 }
 
@@ -194,11 +207,11 @@ function openDeleteCollectionModal() {
     <p class="modal-text">确定删除聚合体 <b>"${escapeHtml(selectedCollection.title)}"</b> 吗？</p>
     <p class="modal-subtext">该聚合体包含 ${noteCount} 篇笔记。</p>
     <div class="modal-radio-group">
-      <label class="modal-radio"><input type="radio" name="del-col" value="loose" checked /> 将 ${noteCount} 篇笔记归入零散笔记</label>
-      <label class="modal-radio"><input type="radio" name="del-col" value="trash" /> 将 ${noteCount} 篇笔记移入回收站</label>
+      <label class="modal-radio">将 ${noteCount} 篇笔记归入零散笔记 <input type="radio" name="del-col" value="loose" checked /></label>
+      <label class="modal-radio">将 ${noteCount} 篇笔记移入回收站 <input type="radio" name="del-col" value="trash" /></label>
     </div>`;
   const footer = `<button class="cancel-button" id="dc-cancel">取消</button><button class="danger-button" id="dc-confirm">删除聚合体</button>`;
-  openModal('删除聚合体', 'DELETE COLLECTION', body, footer);
+  openModal('删除聚合体', body, footer);
   $('#dc-cancel').addEventListener('click', closeModal);
   $('#dc-confirm').addEventListener('click', () => {
     const choice = document.querySelector('input[name="del-col"]:checked').value;
@@ -219,10 +232,11 @@ function openDeleteCollectionModal() {
       if (og) { selectedGroup = og; selectedCollection = og.collections[0]; selectedNote = selectedCollection.notes[0] || null; }
       else { selectedCollection = null; selectedNote = null; }
     }
-    filteredGroups = groups;
+    filteredGroups = getSortedGroups();
     closeModal();
     renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
     showToast(choice === 'loose' ? '聚合体已删除，笔记已归入零散笔记' : '聚合体已删除，笔记已移入回收站');
+    scheduleSyncToWorkspace();
   });
 }
 
@@ -235,11 +249,11 @@ function openDeleteGroupModal(groupId) {
     <p class="modal-text">确定删除分组 <b>"${escapeHtml(group.title)}"</b> 吗？</p>
     <p class="modal-subtext">该分组包含 ${group.collections.length} 个聚合体、${totalNotes} 篇笔记。</p>
     <div class="modal-radio-group">
-      <label class="modal-radio"><input type="radio" name="del-grp" value="loose" checked /> 将 ${totalNotes} 篇笔记归入零散笔记</label>
-      <label class="modal-radio"><input type="radio" name="del-grp" value="trash" /> 将 ${totalNotes} 篇笔记移入回收站</label>
+      <label class="modal-radio">将 ${totalNotes} 篇笔记归入零散笔记 <input type="radio" name="del-grp" value="loose" checked /></label>
+      <label class="modal-radio">将 ${totalNotes} 篇笔记移入回收站 <input type="radio" name="del-grp" value="trash" /></label>
     </div>`;
   const footer = `<button class="cancel-button" id="dg-cancel">取消</button><button class="danger-button" id="dg-confirm">删除分组</button>`;
-  openModal('删除分组', 'DELETE GROUP', body, footer);
+  openModal('删除分组', body, footer);
   $('#dg-cancel').addEventListener('click', closeModal);
   $('#dg-confirm').addEventListener('click', () => {
     const choice = document.querySelector('input[name="del-grp"]:checked').value;
@@ -256,29 +270,250 @@ function openDeleteGroupModal(groupId) {
     } else {
       selectedGroup = null; selectedCollection = null; selectedNote = null;
     }
-    filteredGroups = groups;
+    filteredGroups = getSortedGroups();
     closeModal();
     renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
     showToast(choice === 'loose' ? '分组已删除，笔记已归入零散笔记' : '分组已删除，笔记已移入回收站');
+    scheduleSyncToWorkspace();
   });
 }
 
-// --- 设置弹窗 ---
-function openSettingsModal() {
-  const body = `
-    <label>回收站保留数量<input type="number" id="set-trash-limit" min="1" max="200" value="${settings.trashLimit}" /></label>
-    <p class="modal-subtext">超出此数量的最早删除笔记将被永久清除。</p>`;
-  const footer = `<button class="cancel-button" id="set-cancel">取消</button><button class="submit-button" id="set-save">保存设置</button>`;
-  openModal('设置', 'SETTINGS', body, footer);
-  $('#set-cancel').addEventListener('click', closeModal);
-  $('#set-save').addEventListener('click', () => {
-    const val = parseInt($('#set-trash-limit').value);
-    if (isNaN(val) || val < 1) { showToast('请输入有效数字'); return; }
-    settings.trashLimit = val;
-    enforceTrashLimit();
+// --- 重命名分组弹窗 ---
+function openRenameGroupModal(groupId) {
+  const group = groups.find(g => g.id === groupId);
+  if (!group) return;
+  const body = `<label>分组名称<input id="rg-title" maxlength="20" value="${escapeHtml(group.title)}" /></label>`;
+  const footer = `<button class="cancel-button" id="rg-cancel">取消</button><button class="submit-button" id="rg-submit">保存</button>`;
+  openModal('重命名分组', body, footer);
+  $('#rg-cancel').addEventListener('click', closeModal);
+  $('#rg-submit').addEventListener('click', () => {
+    const title = $('#rg-title').value.trim();
+    if (!title) { showToast('请输入名称'); return; }
+    group.title = title;
+    sortGroupsAZ();
+    filteredGroups = getSortedGroups();
     closeModal();
-    updateNavCounts(); renderTrash();
-    showToast('设置已保存');
+    renderGroupTree(); renderCollections(); renderEditor();
+    showToast('分组已重命名');
+    scheduleSyncToWorkspace();
+  });
+  setTimeout(() => $('#rg-title').focus(), 50);
+}
+
+// --- 置顶/取消置顶分组 ---
+function togglePinGroup(groupId) {
+  const group = groups.find(g => g.id === groupId);
+  if (!group) return;
+  group.pinned = !group.pinned;
+  filteredGroups = getSortedGroups();
+  renderGroupTree();
+  showToast(group.pinned ? '分组已置顶' : '已取消置顶');
+  scheduleSyncToWorkspace();
+}
+
+// --- 在分组内新增聚合体弹窗 ---
+function openAddCollectionToGroupModal(groupId) {
+  const group = groups.find(g => g.id === groupId);
+  if (!group) return;
+  const body = `
+    <label>聚合体名称<input id="mcg-title" maxlength="40" placeholder="例如：产品研究" /></label>
+    <label>描述<textarea id="mcg-description" maxlength="100" placeholder="简单描述这个聚合体的用途"></textarea></label>
+    <label>预置笔记模板<select id="mcg-template"><option value="3">3 篇基础模板</option><option value="1">1 篇空白笔记</option><option value="0">暂不创建笔记</option></select></label>`;
+  const footer = `<button class="cancel-button" id="mcg-cancel">取消</button><button class="submit-button" id="mcg-submit">创建聚合体</button>`;
+  openModal('在「' + group.title + '」内新增聚合体', body, footer);
+  $('#mcg-cancel').addEventListener('click', closeModal);
+  $('#mcg-submit').addEventListener('click', () => {
+    const title = $('#mcg-title').value.trim();
+    if (!title) { showToast('请输入聚合体名称'); return; }
+    const id = `collection-${Date.now()}`;
+    const templateCount = Number($('#mcg-template').value);
+    const names = ['概览', '待办事项', '灵感与资料'].slice(0, templateCount);
+    const collection = { id, title, description: $('#mcg-description').value.trim(), color: 'purple', notesExpanded: true, updated: '刚刚', notes: names.map((n, i) => ({ id: `${id}-${i}`, title: n, content: `# ${n}\n\n在这里开始记录……`, favorite: false })) };
+    group.collections.unshift(collection);
+    sortGroupsAZ();
+    group.expanded = true;
+    selectedGroup = group;
+    selectedCollection = collection;
+    selectedNote = collection.notes[0] || null;
+    filteredGroups = getSortedGroups();
+    closeModal();
+    renderGroupTree(); renderCollections(); renderEditor();
+    showToast('聚合体已创建');
+    scheduleSyncToWorkspace();
+  });
+  setTimeout(() => $('#mcg-title').focus(), 50);
+}
+
+// --- 获取排序后的分组（置顶优先，其余按首字母） ---
+function getSortedGroups() {
+  return [...groups].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return a.title.localeCompare(b.title, 'zh');
+  });
+}
+
+// --- 关闭所有三点菜单 ---
+function closeAllContextMenus() {
+  document.querySelectorAll('.context-menu').forEach(m => m.remove());
+}
+
+// --- 设置弹窗 ---
+let settingsActiveTab = 'general';
+let workspacePath = '';
+
+async function loadWorkspacePath() {
+  try {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    workspacePath = data.workspacePath || '';
+  } catch (e) {
+    workspacePath = '';
+  }
+}
+
+function openSettingsModal() {
+  loadWorkspacePath().then(() => {
+    const container = $('#modal-container');
+    container.innerHTML = `
+      <div class="settings-modal">
+        <div class="settings-header"><h2>设置</h2><button type="button" class="modal-close" id="modal-close-btn">×</button></div>
+        <div class="settings-body">
+          <nav class="settings-nav">
+            <button class="settings-nav-item ${settingsActiveTab === 'general' ? 'active' : ''}" data-tab="general">通用</button>
+            <button class="settings-nav-item ${settingsActiveTab === 'workspace' ? 'active' : ''}" data-tab="workspace">工作区</button>
+          </nav>
+          <div class="settings-content">
+            ${settingsActiveTab === 'general' ? renderGeneralSettings() : renderWorkspaceSettings()}
+          </div>
+        </div>
+      </div>`;
+    $('#modal-backdrop').classList.remove('hidden');
+    $('#modal-close-btn').addEventListener('click', closeModal);
+
+    // 导航切换
+    $$('.settings-nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        settingsActiveTab = btn.dataset.tab;
+        openSettingsModal();
+      });
+    });
+
+    // 通用设置事件
+    if (settingsActiveTab === 'general') {
+      $('#set-trash-limit').addEventListener('change', () => {
+        const val = parseInt($('#set-trash-limit').value);
+        if (!isNaN(val) && val >= 1) {
+          settings.trashLimit = val;
+          enforceTrashLimit();
+          updateNavCounts(); renderTrash();
+        }
+      });
+    }
+
+    // 工作区设置事件
+    if (settingsActiveTab === 'workspace') {
+      $('#ws-change-btn').addEventListener('click', openChangeWorkspaceModal);
+      $('#ws-refresh-btn').addEventListener('click', refreshFromWorkspace);
+    }
+  });
+}
+
+function renderGeneralSettings() {
+  return `
+    <div class="settings-section">
+      <h3>偏好设置</h3>
+      <div class="settings-card">
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">回收站保留数量</div>
+            <div class="settings-desc">超出此数量的最早删除笔记将被永久清除</div>
+          </div>
+          <input type="number" id="set-trash-limit" min="1" max="200" value="${settings.trashLimit}" class="settings-input-sm" />
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderWorkspaceSettings() {
+  return `
+    <div class="settings-section">
+      <h3>工作区</h3>
+      <div class="settings-card">
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">工作区位置</div>
+            <div class="settings-desc">${escapeHtml(workspacePath || 'H:\\NotePlanner\\workspace')}</div>
+          </div>
+          <button class="settings-action-btn" id="ws-change-btn">更改</button>
+        </div>
+        <div class="settings-row" style="margin-top:12px">
+          <button class="settings-action-btn primary" id="ws-refresh-btn">从工作区刷新</button>
+          <span class="settings-desc" style="margin-left:12px">扫描本地文件并更新视图</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function refreshFromWorkspace() {
+  try {
+    showToast('正在扫描工作区…');
+    const res = await fetch('/api/workspace');
+    if (!res.ok) throw new Error('扫描失败');
+    const data = await res.json();
+    groups.length = 0;
+    if (data.groups) data.groups.forEach(g => groups.push(g));
+    sortGroupsAZ();
+    looseNotes.length = 0;
+    if (data.looseNotes) data.looseNotes.forEach(n => looseNotes.push(n));
+    trash.length = 0;
+    if (data.trash) data.trash.forEach(t => trash.push(t));
+    // 重置选中状态
+    selectedGroup = groups[0] || null;
+    selectedCollection = selectedGroup?.collections?.[0] || null;
+    selectedNote = selectedCollection?.notes?.[0] || null;
+    selectedLooseNote = looseNotes[0] || null;
+    if (currentView === 'collections') { renderGroupTree(); renderCollections(); renderEditor(); }
+    else if (currentView === 'loose') { renderLooseNotes(); renderLooseEditor(); }
+    else if (currentView === 'trash') { renderTrash(); }
+    updateNavCounts();
+    showToast('已从工作区刷新');
+  } catch (e) {
+    showToast('刷新失败：' + e.message);
+  }
+}
+
+function openChangeWorkspaceModal() {
+  const body = `
+    <p class="modal-text">选择新的工作区目录</p>
+    <label>目录路径<input id="ws-path" placeholder="例如：D:\\Documents\\Notes" value="${escapeHtml(workspacePath || '')}" /></label>
+    <label class="modal-radio"><input type="checkbox" id="ws-transfer" checked /> 转移现有内容到新工作区</label>`;
+  const footer = `<button class="cancel-button" id="ws-cancel">取消</button><button class="submit-button" id="ws-confirm">更改</button>`;
+  openModal('更改工作区', body, footer);
+  $('#ws-cancel').addEventListener('click', closeModal);
+  $('#ws-confirm').addEventListener('click', async () => {
+    const newPath = $('#ws-path').value.trim();
+    if (!newPath) { showToast('请输入目录路径'); return; }
+    const transfer = $('#ws-transfer').checked;
+    try {
+      const res = await fetch('/api/migrate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({newPath, transfer})
+      });
+      const data = await res.json();
+      if (data.ok) {
+        workspacePath = newPath;
+        closeModal();
+        showToast('工作区已更改');
+        // 刷新以加载新工作区内容
+        refreshFromWorkspace();
+      } else {
+        showToast(data.error || '更改失败');
+      }
+    } catch (e) {
+      showToast('更改失败：' + e.message);
+    }
   });
 }
 
@@ -287,13 +522,14 @@ function openEmptyTrashModal() {
   if (trash.length === 0) { showToast('回收站已为空'); return; }
   const body = `<p class="modal-text">确定清空回收站吗？</p><p class="modal-subtext">${trash.length} 篇笔记将被永久删除，无法恢复。</p>`;
   const footer = `<button class="cancel-button" id="et-cancel">取消</button><button class="danger-button" id="et-confirm">永久清空</button>`;
-  openModal('清空回收站', 'EMPTY TRASH', body, footer);
+  openModal('清空回收站', body, footer);
   $('#et-cancel').addEventListener('click', closeModal);
   $('#et-confirm').addEventListener('click', () => {
     trash.length = 0;
     closeModal();
     renderTrash(); updateNavCounts();
     showToast('回收站已清空');
+    scheduleSyncToWorkspace();
   });
 }
 
@@ -313,19 +549,21 @@ function restoreNote(trashId) {
   looseNotes.unshift({ id: `loose-${Date.now()}`, title: item.title, content: item.content, favorite: false });
   renderTrash(); renderLooseNotes(); updateNavCounts();
   showToast('笔记已恢复到零散笔记');
+  scheduleSyncToWorkspace();
 }
 function permanentDelete(trashId) {
   const idx = trash.findIndex(t => t.id === trashId);
   if (idx < 0) return;
   const body = `<p class="modal-text">确定永久删除 <b>"${escapeHtml(trash[idx].title)}"</b> 吗？</p><p class="modal-subtext">此操作无法撤销。</p>`;
   const footer = `<button class="cancel-button" id="pd-cancel">取消</button><button class="danger-button" id="pd-confirm">永久删除</button>`;
-  openModal('永久删除', 'PERMANENT DELETE', body, footer);
+  openModal('永久删除', body, footer);
   $('#pd-cancel').addEventListener('click', closeModal);
   $('#pd-confirm').addEventListener('click', () => {
     trash.splice(idx, 1);
     closeModal();
     renderTrash(); updateNavCounts();
     showToast('已永久删除');
+    scheduleSyncToWorkspace();
   });
 }
 
@@ -364,15 +602,14 @@ function renderGroupTree(list = filteredGroups) {
           <span class="tree-collection-name">${escapeHtml(col.title)}</span>
           <span class="tree-collection-count">${col.notes.length}</span>
         </button>
-        <button class="tree-collection-delete" data-group="${group.id}" data-collection="${col.id}" title="删除聚合体">×</button>
       </div>`;
     }).join('') : '';
-    return `<div class="tree-group ${isParentOfSelected ? 'highlighted' : ''}" data-group="${group.id}">
+    return `<div class="tree-group ${isParentOfSelected ? 'highlighted' : ''} ${group.pinned ? 'pinned' : ''}" data-group="${group.id}">
       <button class="tree-group-header" data-group="${group.id}">
         <span class="tree-chevron ${group.expanded ? 'expanded' : ''}">▶</span>
+        ${group.pinned ? '<span class="tree-pin-icon">📌</span>' : ''}
         <span class="tree-group-title">${escapeHtml(group.title)}</span>
-        <span class="tree-group-count">${group.collections.length}</span>
-        <span class="tree-group-delete" data-group="${group.id}" title="删除分组">×</span>
+        <span class="tree-group-menu" data-group="${group.id}" title="更多操作">⋯</span>
       </button>
       <div class="tree-children ${group.expanded ? '' : 'collapsed'}">
         ${collectionsHtml}
@@ -399,9 +636,7 @@ function renderCollections() {
     <div class="collection-title-row">
       <h2>${escapeHtml(col.title)}</h2>
       <div class="collection-actions">
-        <button data-action="add-note" title="新增笔记">＋</button>
-        <button data-action="rename" title="重命名">✎</button>
-        <button data-action="delete" title="删除聚合体">×</button>
+        <button class="collection-menu-btn" data-action="open-menu" title="更多操作">⋯</button>
       </div>
     </div>
     <p>${escapeHtml(col.description || '暂无描述')}</p>
@@ -450,10 +685,9 @@ function renderLooseNotes(list = filteredLooseNotes) {
       <button class="loose-note-item ${note.id === selectedLooseNote?.id ? 'active' : ''}" data-note="${note.id}">
         <span class="note-bullet">${note.favorite ? '★' : '·'}</span>
         <span class="note-title-text">${escapeHtml(note.title)}</span>
-        <i data-action="delete-loose" data-note="${note.id}" title="删除">×</i>
+        <span class="loose-note-menu" data-action="open-loose-menu" data-note="${note.id}" title="更多操作">⋯</span>
       </button>`).join('');
   }
-  $('#loose-note-count').textContent = looseNotes.length;
 }
 function renderLooseEditor() {
   $('#loose-editor-title').textContent = selectedLooseNote ? selectedLooseNote.title : '选择一篇笔记';
@@ -465,7 +699,6 @@ function renderLooseEditor() {
 // ==================== 回收站渲染 ====================
 function renderTrash(list = filteredTrash) {
   const container = $('#trash-list');
-  $('#trash-limit-display').textContent = settings.trashLimit;
   if (trash.length === 0) {
     container.innerHTML = '<div class="empty-state">回收站为空</div>';
   } else if (list.length === 0) {
@@ -478,8 +711,7 @@ function renderTrash(list = filteredTrash) {
           <span class="trash-item-meta">来源：${escapeHtml(item.source)} · 删除于 ${item.deletedAt}</span>
         </div>
         <div class="trash-item-actions">
-          <button data-action="restore" data-id="${item.id}" title="恢复">恢复</button>
-          <button data-action="perm-delete" data-id="${item.id}" title="永久删除">×</button>
+          <button data-action="open-trash-menu" data-id="${item.id}" title="更多操作">⋯</button>
         </div>
       </div>`).join('');
   }
@@ -512,14 +744,28 @@ function selectCollection(id) {
   renderGroupTree(); renderCollections(); renderEditor();
 }
 
+function selectGroup(groupId) {
+  const group = groups.find(g => g.id === groupId);
+  if (!group) return;
+  selectedGroup = group;
+  group.expanded = true;
+  if (group.collections.length > 0) {
+    selectedCollection = group.collections[0];
+    selectedNote = selectedCollection.notes[0] || null;
+  } else {
+    selectedCollection = null;
+    selectedNote = null;
+  }
+  if (currentView !== 'collections') {
+    switchView('collections');
+  } else {
+    renderGroupTree(); renderCollections(); renderEditor();
+  }
+}
+
 // ==================== 导航计数 ====================
 function updateNavCounts() {
-  $('#nav-collection-count').textContent = countAllCollections();
-  $('#nav-loose-count').textContent = looseNotes.length;
-  $('#nav-trash-count').textContent = trash.length;
   $('#note-count').textContent = countAllNotes();
-  $('#collection-count').textContent = countAllCollections();
-  $('#trash-count-heading').textContent = trash.length;
 }
 
 // ==================== 事件绑定 ====================
@@ -531,16 +777,12 @@ $('#nav-trash').addEventListener('click', e => { e.preventDefault(); switchView(
 
 // 组树
 $('#group-tree').addEventListener('click', e => {
-  const delGroup = e.target.closest('.tree-group-delete');
-  if (delGroup) { e.stopPropagation(); openDeleteGroupModal(delGroup.dataset.group); return; }
-  const delCol = e.target.closest('.tree-collection-delete');
-  if (delCol) { e.stopPropagation(); selectCollection(delCol.dataset.collection); openDeleteCollectionModal(); return; }
+  const menuBtn = e.target.closest('.tree-group-menu');
+  if (menuBtn) { e.stopPropagation(); openGroupContextMenu(menuBtn, menuBtn.dataset.group); return; }
+  const chevron = e.target.closest('.tree-chevron');
+  if (chevron) { e.stopPropagation(); const group = groups.find(g => g.id === chevron.closest('.tree-group-header').dataset.group); if (group) { group.expanded = !group.expanded; renderGroupTree(); } return; }
   const header = e.target.closest('.tree-group-header');
-  if (header) {
-    const group = groups.find(g => g.id === header.dataset.group);
-    if (group) { group.expanded = !group.expanded; renderGroupTree(); }
-    return;
-  }
+  if (header) { selectGroup(header.dataset.group); return; }
   const colBtn = e.target.closest('.tree-collection');
   if (colBtn) { selectCollection(colBtn.dataset.collection); return; }
 });
@@ -549,14 +791,11 @@ $('#group-tree').addEventListener('click', e => {
 $('#collections-list').addEventListener('click', e => {
   const action = e.target.dataset.action;
   if (action === 'delete-note') { e.stopPropagation(); openDeleteNoteModal(e.target.dataset.note, 'collection'); return; }
-  if (action === 'delete-loose') { e.stopPropagation(); openDeleteNoteModal(e.target.dataset.note, 'loose'); return; }
   if (action === 'toggle-notes') {
     if (selectedCollection) { selectedCollection.notesExpanded = !selectedCollection.notesExpanded; renderCollections(); }
     return;
   }
-  if (action === 'add-note') { e.stopPropagation(); openCreateNoteModal(); return; }
-  if (action === 'rename') { e.stopPropagation(); renameCollection(); return; }
-  if (action === 'delete') { e.stopPropagation(); openDeleteCollectionModal(); return; }
+  if (action === 'open-menu') { e.stopPropagation(); openCollectionContextMenu(e.target); return; }
   const noteBtn = e.target.closest('.collection-note');
   if (noteBtn) {
     selectedNote = selectedCollection.notes.find(n => n.id === noteBtn.dataset.note);
@@ -565,11 +804,223 @@ $('#collections-list').addEventListener('click', e => {
   }
 });
 
+// --- 移动到聚合体弹窗（零散笔记） ---
+function openMoveLooseToCollectionModal(note) {
+  const groupOptions = getSortedGroups().map(g => 
+    `<optgroup label="${escapeHtml(g.title)}">` +
+    g.collections.map(c => `<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('') +
+    `</optgroup>`
+  ).join('');
+  const body = `
+    <p class="modal-text">将 <b>"${escapeHtml(note.title)}"</b> 移动到指定聚合体</p>
+    <label>选择目标聚合体<select id="mlt-collection">${groupOptions}</select></label>`;
+  const footer = `<button class="cancel-button" id="mlt-cancel">取消</button><button class="submit-button" id="mlt-confirm">移动</button>`;
+  openModal('移动笔记', body, footer);
+  $('#mlt-cancel').addEventListener('click', closeModal);
+  $('#mlt-confirm').addEventListener('click', () => {
+    const collectionId = $('#mlt-collection').value;
+    const targetCollection = findCollectionById(collectionId);
+    if (!targetCollection) { showToast('目标聚合体不存在'); return; }
+    const idx = looseNotes.findIndex(n => n.id === note.id);
+    if (idx < 0) return;
+    looseNotes.splice(idx, 1);
+    targetCollection.notes.unshift({ id: `note-${Date.now()}`, title: note.title, content: note.content, favorite: false });
+    targetCollection.updated = '刚刚';
+    targetCollection.notesExpanded = true;
+    closeModal();
+    renderLooseNotes(); renderLooseEditor(); renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
+    showToast(`笔记已移动到「${targetCollection.title}」`);
+    scheduleSyncToWorkspace();
+  });
+}
+
+// --- 分组三点菜单 ---
+function openLooseNoteContextMenu(btn) {
+  const noteId = btn.dataset.note;
+  const note = looseNotes.find(n => n.id === noteId);
+  if (!note) return;
+  closeAllContextMenus();
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  menu.innerHTML = `
+    <button data-ctx-action="move-to-collection">移动到聚合体…</button>
+    <button data-ctx-action="move-to-trash" data-ctx-note="${noteId}">移入回收站</button>
+    <button data-ctx-action="delete" data-ctx-note="${noteId}" class="ctx-danger">彻底删除</button>
+  `;
+  positionContextMenu(menu, btn);
+  document.body.appendChild(menu);
+  menu.addEventListener('click', e => {
+    const ctxAction = e.target.dataset.ctxAction;
+    const nid = e.target.dataset.ctxNote;
+    if (!ctxAction) return;
+    closeAllContextMenus();
+    if (ctxAction === 'move-to-collection') {
+      openMoveLooseToCollectionModal(note);
+    } else if (ctxAction === 'move-to-trash') {
+      addToTrash(note, '零散笔记');
+      const idx = looseNotes.findIndex(n => n.id === nid);
+      looseNotes.splice(idx, 1);
+      selectedLooseNote = looseNotes[0] || null;
+      renderLooseNotes(); renderLooseEditor(); updateNavCounts();
+      showToast('笔记已移入回收站');
+    scheduleSyncToWorkspace();
+    } else if (ctxAction === 'delete') {
+      openDeleteLoosePermanentlyModal(note);
+    }
+  });
+}
+
+function openDeleteLoosePermanentlyModal(note) {
+  const body = `<p class="modal-text">确定彻底删除 <b>"${escapeHtml(note.title)}"</b> 吗？</p><p class="modal-subtext">此操作无法撤销，笔记将被永久删除。</p>`;
+  const footer = `<button class="cancel-button" id="dlp-cancel">取消</button><button class="danger-button" id="dlp-confirm">彻底删除</button>`;
+  openModal('彻底删除', body, footer);
+  $('#dlp-cancel').addEventListener('click', closeModal);
+  $('#dlp-confirm').addEventListener('click', () => {
+    const idx = looseNotes.findIndex(n => n.id === note.id);
+    looseNotes.splice(idx, 1);
+    selectedLooseNote = looseNotes[0] || null;
+    closeModal();
+    renderLooseNotes(); renderLooseEditor(); updateNavCounts();
+      showToast('笔记已彻底删除');
+      scheduleSyncToWorkspace();
+  });
+}
+
+function openGroupContextMenu(btn, groupId) {
+  closeAllContextMenus();
+  const group = groups.find(g => g.id === groupId);
+  if (!group) return;
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  menu.innerHTML = `
+    <button data-ctx-action="add-collection" data-ctx-group="${groupId}">在该分组内新增聚合体</button>
+    <button data-ctx-action="rename" data-ctx-group="${groupId}">重命名分组</button>
+    <button data-ctx-action="pin" data-ctx-group="${groupId}">${group.pinned ? '取消置顶' : '置顶分组'}</button>
+    <button data-ctx-action="delete" data-ctx-group="${groupId}" class="ctx-danger">删除分组</button>
+  `;
+  positionContextMenu(menu, btn);
+  document.body.appendChild(menu);
+  menu.addEventListener('click', e => {
+    const ctxAction = e.target.dataset.ctxAction;
+    if (!ctxAction) return;
+    const gid = e.target.dataset.ctxGroup;
+    closeAllContextMenus();
+    if (ctxAction === 'add-collection') openAddCollectionToGroupModal(gid);
+    else if (ctxAction === 'rename') openRenameGroupModal(gid);
+    else if (ctxAction === 'pin') togglePinGroup(gid);
+    else if (ctxAction === 'delete') openDeleteGroupModal(gid);
+  });
+}
+
+// --- 回收站笔记三点菜单 ---
+function openTrashNoteContextMenu(btn) {
+  const trashId = btn.dataset.id;
+  const item = trash.find(t => t.id === trashId);
+  if (!item) return;
+  closeAllContextMenus();
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  menu.innerHTML = `
+    <button data-ctx-action="restore-to">恢复到指定聚合体…</button>
+    <button data-ctx-action="restore-loose">恢复到零散笔记</button>
+    <button data-ctx-action="perm-delete" class="ctx-danger">永久删除</button>
+  `;
+  positionContextMenu(menu, btn);
+  document.body.appendChild(menu);
+  menu.addEventListener('click', e => {
+    const ctxAction = e.target.dataset.ctxAction;
+    if (!ctxAction) return;
+    closeAllContextMenus();
+    if (ctxAction === 'restore-to') openRestoreToCollectionModal(trashId);
+    else if (ctxAction === 'restore-loose') restoreNote(trashId);
+    else if (ctxAction === 'perm-delete') permanentDelete(trashId);
+  });
+}
+
+// --- 恢复到指定聚合体弹窗 ---
+function openRestoreToCollectionModal(trashId) {
+  const item = trash.find(t => t.id === trashId);
+  if (!item) return;
+  const groupOptions = getSortedGroups().map(g => 
+    `<optgroup label="${escapeHtml(g.title)}">` +
+    g.collections.map(c => `<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('') +
+    `</optgroup>`
+  ).join('');
+  const body = `
+    <p class="modal-text">将 <b>"${escapeHtml(item.title)}"</b> 恢复到指定聚合体</p>
+    <label>选择目标聚合体<select id="rt-collection">${groupOptions}</select></label>`;
+  const footer = `<button class="cancel-button" id="rt-cancel">取消</button><button class="submit-button" id="rt-confirm">恢复</button>`;
+  openModal('恢复笔记', body, footer);
+  $('#rt-cancel').addEventListener('click', closeModal);
+  $('#rt-confirm').addEventListener('click', () => {
+    const collectionId = $('#rt-collection').value;
+    const targetCollection = findCollectionById(collectionId);
+    if (!targetCollection) { showToast('目标聚合体不存在'); return; }
+    const idx = trash.findIndex(t => t.id === trashId);
+    if (idx < 0) return;
+    const item = trash[idx];
+    trash.splice(idx, 1);
+    targetCollection.notes.unshift({ id: `note-${Date.now()}`, title: item.title, content: item.content, favorite: false });
+    targetCollection.updated = '刚刚';
+    targetCollection.notesExpanded = true;
+    closeModal();
+    renderTrash(); renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
+    showToast(`笔记已恢复到「${targetCollection.title}」`);
+    scheduleSyncToWorkspace();
+  });
+}
+
+// --- 聚合体三点菜单 ---
+function openCollectionContextMenu(btn) {
+  if (!selectedCollection) return;
+  closeAllContextMenus();
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  menu.innerHTML = `
+    <button data-ctx-action="add-note">新增笔记</button>
+    <button data-ctx-action="rename">重命名聚合体</button>
+    <button data-ctx-action="delete" class="ctx-danger">删除聚合体</button>
+  `;
+  positionContextMenu(menu, btn);
+  document.body.appendChild(menu);
+  menu.addEventListener('click', e => {
+    const ctxAction = e.target.dataset.ctxAction;
+    if (!ctxAction) return;
+    closeAllContextMenus();
+    if (ctxAction === 'add-note') openCreateNoteModal();
+    else if (ctxAction === 'rename') renameCollection();
+    else if (ctxAction === 'delete') openDeleteCollectionModal();
+  });
+}
+
+// --- 菜单位置定位 ---
+function positionContextMenu(menu, anchor) {
+  menu.style.visibility = 'hidden';
+  document.body.appendChild(menu);
+  const rect = anchor.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  let left = rect.right - menuRect.width;
+  let top = rect.bottom + 4;
+  if (left < 8) left = 8;
+  if (top + menuRect.height > window.innerHeight - 8) top = rect.top - menuRect.height - 4;
+  menu.remove();
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+  menu.style.visibility = 'visible';
+}
+
+// 点击空白处关闭三点菜单
+document.addEventListener('click', e => {
+  if (!e.target.closest('.context-menu') && !e.target.closest('.tree-group-menu') && !e.target.closest('.collection-menu-btn')) {
+    closeAllContextMenus();
+  }
+});
+
 function renameCollection() {
   if (!selectedCollection) return;
   const body = `<label>聚合体名称<input id="rn-title" maxlength="40" value="${escapeHtml(selectedCollection.title)}" /></label>`;
   const footer = `<button class="cancel-button" id="rn-cancel">取消</button><button class="submit-button" id="rn-submit">保存</button>`;
-  openModal('重命名聚合体', 'RENAME', body, footer);
+  openModal('重命名聚合体', body, footer);
   $('#rn-cancel').addEventListener('click', closeModal);
   $('#rn-submit').addEventListener('click', () => {
     const title = $('#rn-title').value.trim();
@@ -579,18 +1030,36 @@ function renameCollection() {
     closeModal();
     renderGroupTree(); renderCollections(); renderEditor();
     showToast('名称已修改');
+    scheduleSyncToWorkspace();
   });
   setTimeout(() => $('#rn-title').focus(), 50);
 }
 
 // 编辑器（聚合体）
+let saveSyncTimer = null;
+function scheduleSyncToWorkspace() {
+  clearTimeout(saveSyncTimer);
+  saveSyncTimer = setTimeout(syncToWorkspace, 3000);
+}
+async function syncToWorkspace() {
+  try {
+    await fetch('/api/workspace', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({groups, looseNotes, trash})
+    });
+  } catch (e) {
+    // 静默失败，不打扰用户
+  }
+}
 $('#markdown-editor').addEventListener('input', e => {
   if (!selectedNote) return;
   selectedNote.content = e.target.value;
-  $('#save-status').textContent = '保存中…';
+  $('#save-status').textContent = '编辑中…';
   updatePreview(); updateWordCount();
   clearTimeout(window.saveTimer);
   window.saveTimer = setTimeout(() => { $('#save-status').textContent = '已保存'; }, 500);
+  scheduleSyncToWorkspace();
 });
 $('#preview-toggle').addEventListener('click', () => {
   const editor = $('#markdown-editor');
@@ -603,7 +1072,7 @@ $('#preview-toggle').addEventListener('click', () => {
 
 // 零散笔记列表
 $('#loose-notes-list').addEventListener('click', e => {
-  if (e.target.dataset.action === 'delete-loose') { e.stopPropagation(); openDeleteNoteModal(e.target.dataset.note, 'loose'); return; }
+  if (e.target.dataset.action === 'open-loose-menu') { e.stopPropagation(); openLooseNoteContextMenu(e.target); return; }
   const item = e.target.closest('.loose-note-item');
   if (item) {
     selectedLooseNote = looseNotes.find(n => n.id === item.dataset.note);
@@ -613,11 +1082,12 @@ $('#loose-notes-list').addEventListener('click', e => {
 $('#loose-markdown-editor').addEventListener('input', e => {
   if (!selectedLooseNote) return;
   selectedLooseNote.content = e.target.value;
-  $('#loose-save-status').textContent = '保存中…';
+  $('#loose-save-status').textContent = '编辑中…';
   $('#loose-markdown-preview').innerHTML = markdownToHtml(e.target.value);
   $('#loose-word-count').textContent = `${e.target.value.replace(/\s/g, '').length} 字`;
   clearTimeout(window.looseSaveTimer);
   window.looseSaveTimer = setTimeout(() => { $('#loose-save-status').textContent = '已保存'; }, 500);
+  scheduleSyncToWorkspace();
 });
 $('#loose-preview-toggle').addEventListener('click', () => {
   const editor = $('#loose-markdown-editor');
@@ -630,8 +1100,7 @@ $('#loose-preview-toggle').addEventListener('click', () => {
 
 // 回收站
 $('#trash-list').addEventListener('click', e => {
-  if (e.target.dataset.action === 'restore') { restoreNote(e.target.dataset.id); return; }
-  if (e.target.dataset.action === 'perm-delete') { permanentDelete(e.target.dataset.id); return; }
+  if (e.target.dataset.action === 'open-trash-menu') { e.stopPropagation(); openTrashNoteContextMenu(e.target); return; }
 });
 $('#btn-empty-trash').addEventListener('click', openEmptyTrashModal);
 
@@ -651,20 +1120,9 @@ $('#trash-search').addEventListener('input', e => {
 // 聚合体搜索
 $('#search-input').addEventListener('input', e => {
   const kw = e.target.value.trim().toLowerCase();
-  if (!kw) { filteredGroups = groups; renderGroupTree(); return; }
-  filteredGroups = groups.map(g => ({ ...g, expanded: true, collections: g.collections.filter(c => `${c.title}${c.description}${c.notes.map(n => n.title + n.content).join('')}`.toLowerCase().includes(kw)) })).filter(g => g.collections.length > 0);
+  if (!kw) { filteredGroups = getSortedGroups(); renderGroupTree(); return; }
+  filteredGroups = getSortedGroups().map(g => ({ ...g, expanded: true, collections: g.collections.filter(c => `${c.title}${c.description}${c.notes.map(n => n.title + n.content).join('')}`.toLowerCase().includes(kw)) })).filter(g => g.collections.length > 0);
   renderGroupTree();
-});
-
-// 排序
-$('#filter-button').addEventListener('click', () => $('#filter-menu').classList.toggle('hidden'));
-$('#filter-menu').addEventListener('click', e => {
-  const sort = e.target.dataset.sort;
-  if (!sort) return;
-  groups.forEach(g => g.collections.sort((a, b) => sort === 'az' ? a.title.localeCompare(b.title, 'zh') : sort === 'oldest' ? b.updated.localeCompare(a.updated) : a.updated.localeCompare(b.updated)));
-  filteredGroups = groups;
-  renderGroupTree();
-  $('#filter-menu').classList.add('hidden');
 });
 
 // 按钮
