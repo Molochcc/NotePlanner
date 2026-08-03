@@ -1159,7 +1159,44 @@ document.addEventListener('keydown', e => {
 });
 
 // ==================== 初始化 ====================
-renderGroupTree();
-renderCollections();
-renderEditor();
-updateNavCounts();
+async function init() {
+  // 先尝试从 workspace 加载
+  try {
+    const res = await fetch('/api/workspace');
+    if (res.ok) {
+      const data = await res.json();
+      const hasData = (data.groups && data.groups.length > 0) ||
+                      (data.looseNotes && data.looseNotes.length > 0) ||
+                      (data.trash && data.trash.length > 0);
+      if (hasData) {
+        // workspace 有数据，加载它
+        groups.length = 0;
+        if (data.groups) data.groups.forEach(g => groups.push(g));
+        sortGroupsAZ();
+        looseNotes.length = 0;
+        if (data.looseNotes) data.looseNotes.forEach(n => looseNotes.push(n));
+        trash.length = 0;
+        if (data.trash) data.trash.forEach(t => trash.push(t));
+      } else {
+        // workspace 为空，把当前 demo 数据同步进去
+        await syncToWorkspace();
+      }
+    }
+  } catch (e) {
+    // 后端未启动或出错，保持 demo 数据
+  }
+
+  // 设置初始选中状态
+  selectedGroup = groups[0] || null;
+  selectedCollection = selectedGroup?.collections?.[0] || null;
+  selectedNote = selectedCollection?.notes?.[0] || null;
+  selectedLooseNote = looseNotes[0] || null;
+  filteredGroups = getSortedGroups();
+
+  renderGroupTree();
+  renderCollections();
+  renderEditor();
+  updateNavCounts();
+}
+
+init();
