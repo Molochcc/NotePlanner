@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=22" />
 </head>
 <body>
 <div class="app-shell">
@@ -15,17 +15,11 @@
   <aside class="sidebar" id="sidebar">
     <div class="brand"><span class="brand-mark">N</span><span>NotePlanner</span></div>
     <nav class="main-nav" aria-label="主导航">
-      <a class="nav-item" href="#collections" id="nav-collections"><span class="nav-icon">▦</span> 聚合体</a>
+      <a class="nav-item" href="#collections" id="nav-collections"><span class="nav-icon">▦</span> 笔记集</a>
       <a class="nav-item" href="#loose" id="nav-loose"><span class="nav-icon">▤</span> 零散笔记</a>
       <a class="nav-item" href="#trash" id="nav-trash"><span class="nav-icon">♧</span> 回收站</a>
+      <a class="nav-item" href="#search" id="nav-search"><span class="nav-icon">⌕</span> 搜索</a>
     </nav>
-    <div class="sidebar-section">
-      <div class="section-label">标签 <button aria-label="添加标签">＋</button></div>
-      <a class="tag-link" href="#work"><span class="tag-dot coral"></span>工作</a>
-      <a class="tag-link" href="#ideas"><span class="tag-dot purple"></span>灵感</a>
-      <a class="tag-link" href="#reading"><span class="tag-dot blue"></span>阅读</a>
-      <a class="tag-link" href="#life"><span class="tag-dot green"></span>生活</a>
-    </div>
     <div class="sidebar-footer">
       <button class="sidebar-action-btn" id="btn-settings" title="设置"><span>⚙</span> 设置</button>
       <button class="sidebar-action-btn collapse-btn" id="btn-collapse" title="收起菜单栏"><span>◀</span> 收起</button>
@@ -38,21 +32,20 @@
   <!-- ========== 主内容区 ========== -->
   <main class="content" id="main-content">
     <header class="topbar">
-      <div class="breadcrumbs" id="breadcrumbs"><span>我的空间</span><i>/</i><b>聚合体</b></div>
-      <div class="top-actions"><button class="icon-button" id="theme-toggle">◐</button><div class="mini-avatar">L</div></div>
+      <div class="breadcrumbs" id="breadcrumbs"><span>我的空间</span><i>/</i><b>笔记集</b></div>
+      <div class="top-actions"><button class="icon-button" id="theme-toggle">◐</button></div>
     </header>
 
-    <!-- ========== 聚合体视图 ========== -->
+    <!-- ========== 笔记集视图 ========== -->
     <section class="view view-collections active" id="view-collections">
-      <section class="page-heading"><div><h1>笔记聚合体</h1></div></section>
-      <section class="toolbar"><div class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="搜索聚合体或笔记..." /></div></section>
+      <section class="page-heading"><div><h1>笔记集</h1></div></section>
       <div class="workspace">
         <section class="group-tree-panel">
-          <div class="panel-heading"><span>组视图</span><button id="add-group" title="新建分组">＋</button></div>
+          <div class="panel-heading"><span>主题视图</span><div class="panel-actions"><button id="add-group" title="新建主题">＋</button></div></div>
           <div id="group-tree"></div>
         </section>
         <section class="collections-panel">
-          <div class="panel-heading"><span>我的聚合体</span><div class="panel-actions"><button id="add-collection">＋ 新建</button></div></div>
+          <div class="panel-heading"><span>我的笔记集</span><div class="panel-actions"><button id="add-collection">＋ 新建</button></div></div>
           <div id="collections-list"></div>
         </section>
         <section class="editor-panel" id="editor-panel">
@@ -66,7 +59,7 @@
     <!-- ========== 零散笔记视图 ========== -->
     <section class="view view-loose" id="view-loose">
       <section class="page-heading"><div><h1>零散笔记</h1></div></section>
-      <section class="toolbar"><div class="search-box"><span>⌕</span><input id="loose-search" type="search" placeholder="搜索笔记..." /></div><div class="filter-actions"><button class="filter-button" id="add-loose-note">＋ 新建笔记</button></div></section>
+      <section class="toolbar"><div class="filter-actions"><button class="filter-button" id="add-loose-note">＋ 新建笔记</button></div></section>
       <div class="workspace-loose">
         <section class="loose-list-panel">
           <div class="panel-heading"><span>笔记列表</span></div>
@@ -83,12 +76,26 @@
     <!-- ========== 回收站视图 ========== -->
     <section class="view view-trash" id="view-trash">
       <section class="page-heading"><div><h1>回收站</h1></div></section>
-      <section class="toolbar"><div class="search-box"><span>⌕</span><input id="trash-search" type="search" placeholder="搜索已删除笔记..." /></div><div class="filter-actions"><button class="filter-button danger" id="btn-empty-trash">清空回收站</button></div></section>
-      <div class="trash-list" id="trash-list"></div>
+      <section class="toolbar"><div class="filter-actions"><button class="filter-button danger" id="btn-empty-trash">清空回收站</button></div></section>
+      <section class="trash-panel">
+        <div class="panel-heading"><span>已删除的笔记</span><span class="panel-count" id="trash-count">0</span></div>
+        <div class="trash-list" id="trash-list"></div>
+      </section>
     </section>
 
-    <footer class="content-footer"><span><span class="sync-dot"></span> 已同步</span><span>共 <b id="note-count">6</b> 篇笔记</span></footer>
+    <!-- ========== 搜索视图 ========== -->
+    <section class="view view-search" id="view-search">
+      <section class="page-heading"><div><h1>搜索</h1></div></section>
+      <section class="toolbar"><div class="search-box big"><span>⌕</span><input id="global-search" type="search" placeholder="搜索所有笔记…（标题与正文，支持 Ctrl/Cmd+K 唤起）" /></div></section>
+      <div class="search-stats" id="search-stats"></div>
+      <div class="search-results" id="search-results"></div>
+    </section>
+
   </main>
+  <div class="collapse-dock" id="collapse-dock">
+    <button class="circle-btn" id="dock-collapse" title="收起面板" aria-label="收起面板"><span class="cd-chev">‹</span></button>
+    <button class="circle-btn" id="dock-expand" title="展开面板" aria-label="展开面板"><span class="cd-chev">›</span></button>
+  </div>
 </div>
 
 <!-- ========== 统一弹窗容器 ========== -->
@@ -101,6 +108,6 @@
 <!-- ========== Toast ========== -->
 <div class="toast" id="toast" role="status"></div>
 
-<script src="app.js?v=1"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>

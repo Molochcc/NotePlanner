@@ -9,3 +9,5 @@ test_workspace/
 .idea/
 launcher.vbs
 *.rar
+node_modules/
+.workbuddy/

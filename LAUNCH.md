@@ -1,16 +1,18 @@
 # NotePlanner 启动方式
 
-## 方法：双击启动
+NotePlanner 是一个本地优先的 Electron 桌面应用，笔记以 `.md` 文件存于 `workspace/` 目录，数据完全归用户所有。
 
-1. 确保已安装 Python 3（Flask 1.1.2+）
-2. 双击 `launcher.vbs`
-3. 自动在后台启动服务器并打开浏览器访问 `http://localhost:4173`
+## 方法一：双击启动（推荐）
 
-## 手动启动
+直接双击 `start.bat`，脚本会自动安装 Electron 并启动主窗口。
+
+> 若网络访问官方源慢，`start.bat` 已配置 `ELECTRON_MIRROR` 走国内镜像。
+
+## 方法二：命令行启动
 
 ```bash
 cd H:\NotePlanner
-py -3 workspace_server.py
+npm install        # 首次需安装依赖（electron）
+npm start          # 启动应用
+# 或 npm run dev  进入开发模式
 ```
-
-然后打开浏览器访问 `http://localhost:4173`
