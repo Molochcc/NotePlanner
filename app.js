@@ -2,25 +2,25 @@
 const groups = [
   { id: 'g-work', title: '工作', expanded: true, pinned: false, collections: [
     { id: 'product', title: '产品与工作', description: '工作中的思考、计划与复盘', color: 'coral', notesExpanded: true, updated: '今天 09:42', notes: [
-      { id: 'product-1', title: '关于个人知识管理的一些思考', content: '# 关于个人知识管理的一些思考\n\n信息不等于知识，知识也不等于智慧。\n\n## 我的三个原则\n\n- 让记录足够简单\n- 让回顾成为习惯\n- 让想法彼此连接', favorite: false },
-      { id: 'product-2', title: '2025 年第二季度目标', content: '# 2025 年第二季度目标\n\n> 少做一点，但做深。\n\n## 重点方向\n\n- 完成产品新版本\n- 每周留出半天深度工作\n- 建立稳定的复盘习惯', favorite: false },
-      { id: 'product-3', title: '设计系统学习笔记', content: '# 设计系统学习笔记\n\n好的设计系统不是限制创造力，而是让团队把精力用在更重要的地方。', favorite: false }
+      { id: 'product-1', title: '关于个人知识管理的一些思考', content: '# 关于个人知识管理的一些思考\n\n信息不等于知识，知识也不等于智慧。\n\n## 我的三个原则\n\n- 让记录足够简单\n- 让回顾成为习惯\n- 让想法彼此连接' },
+      { id: 'product-2', title: '2025 年第二季度目标', content: '# 2025 年第二季度目标\n\n> 少做一点，但做深。\n\n## 重点方向\n\n- 完成产品新版本\n- 每周留出半天深度工作\n- 建立稳定的复盘习惯' },
+      { id: 'product-3', title: '设计系统学习笔记', content: '# 设计系统学习笔记\n\n好的设计系统不是限制创造力，而是让团队把精力用在更重要的地方。' }
     ]}
   ]},
   { id: 'g-read', title: '阅读', expanded: true, pinned: false, collections: [
     { id: 'reading', title: '阅读与输入', description: '书籍、文章和值得保留的观点', color: 'blue', notesExpanded: true, updated: '6 月 10 日', notes: [
-      { id: 'reading-1', title: '读《置身事内》', content: '# 读《置身事内》\n\n记录一些触动我的章节和观点。\n\n## 一个值得反复想的问题\n\n我们如何共同塑造身处的环境？', favorite: false },
-      { id: 'reading-2', title: '待读清单', content: '# 待读清单\n\n- 《纳瓦尔宝典》\n- 《有限与无限的游戏》\n- 《卡片笔记写作法》', favorite: false }
+      { id: 'reading-1', title: '读《置身事内》', content: '# 读《置身事内》\n\n记录一些触动我的章节和观点。\n\n## 一个值得反复想的问题\n\n我们如何共同塑造身处的环境？' },
+      { id: 'reading-2', title: '待读清单', content: '# 待读清单\n\n- 《纳瓦尔宝典》\n- 《有限与无限的游戏》\n- 《卡片笔记写作法》' }
     ]}
   ]},
   { id: 'g-life', title: '生活', expanded: true, pinned: false, collections: [
     { id: 'life', title: '生活记录', description: '日记、旅行与生活中的小事', color: 'green', notesExpanded: true, updated: '6 月 08 日', notes: [
-      { id: 'life-1', title: '周末去看展', content: '# 周末去看展\n\n很久没有留出一整天给自己了。看看展览，走走路，或许会有新的发现。', favorite: false }
+      { id: 'life-1', title: '周末去看展', content: '# 周末去看展\n\n很久没有留出一整天给自己了。看看展览，走走路，或许会有新的发现。' }
     ]}
   ]}
 ];
 
-// 默认按首字母 A-Z 排序分组
+// 默认按首字母 A-Z 排序主题
 function sortGroupsAZ() {
   groups.sort((a, b) => a.title.localeCompare(b.title, 'zh'));
   groups.forEach(g => g.collections.sort((a, b) => a.title.localeCompare(b.title, 'zh')));
@@ -29,7 +29,7 @@ sortGroupsAZ();
 
 const looseNotes = [];
 const trash = [];
-const settings = { trashLimit: 30 };
+const settings = { theme: 'light', trashLimit: 30, workspacePath: '', panelCollapsed: { group: false, collection: false, loose: false } };
 
 // ==================== 状态 ====================
 let currentView = 'collections';
@@ -66,30 +66,31 @@ function openModal(title, bodyHtml, footerHtml) {
 function closeModal() { $('#modal-backdrop').classList.add('hidden'); }
 $('#modal-backdrop').addEventListener('click', e => { if (e.target.id === 'modal-backdrop') closeModal(); });
 
-// --- 新建聚合体弹窗 ---
+// --- 新建笔记集弹窗 ---
 function openCreateCollectionModal() {
   const groupOptions = groups.map(g => `<option value="${g.id}">${g.title}</option>`).join('');
   const body = `
-    <label>聚合体名称<input id="mc-title" maxlength="40" placeholder="例如：产品研究" /></label>
-    <label>描述<textarea id="mc-description" maxlength="100" placeholder="简单描述这个聚合体的用途"></textarea></label>
-    <label>所属分组<select id="mc-group">${groupOptions}</select></label>
-    <label>或新建分组<input id="mc-newgroup" maxlength="20" placeholder="输入新分组名称（可选）" /></label>
+    <label>笔记集名称<input id="mc-title" maxlength="40" placeholder="例如：产品研究" /></label>
+    <label>描述<textarea id="mc-description" maxlength="100" placeholder="简单描述这个笔记集的用途"></textarea></label>
+    <label>所属主题<select id="mc-group">${groupOptions}</select></label>
+    <label>或新建主题<input id="mc-newgroup" maxlength="20" placeholder="输入新主题名称（可选）" /></label>
     <label>预置笔记模板<select id="mc-template"><option value="3">3 篇基础模板</option><option value="1">1 篇空白笔记</option><option value="0">暂不创建笔记</option></select></label>`;
-  const footer = `<button class="cancel-button" id="mc-cancel">取消</button><button class="submit-button" id="mc-submit">创建聚合体</button>`;
-  openModal('新建聚合体', body, footer);
+  const footer = `<button class="cancel-button" id="mc-cancel">取消</button><button class="submit-button" id="mc-submit">创建笔记集</button>`;
+  openModal('新建笔记集', body, footer);
   $('#mc-cancel').addEventListener('click', closeModal);
   $('#mc-submit').addEventListener('click', () => {
-    const title = $('#mc-title').value.trim();
-    if (!title) { showToast('请输入聚合体名称'); return; }
+    const rawTitle = $('#mc-title').value.trim();
+    if (!rawTitle) { showToast('请输入笔记集名称'); return; }
     const groupId = $('#mc-group').value;
     const newGroupName = $('#mc-newgroup').value.trim();
-    const id = `collection-${Date.now()}`;
+    const id = genId('collection');
     const templateCount = Number($('#mc-template').value);
     const names = ['概览', '待办事项', '灵感与资料'].slice(0, templateCount);
-    const collection = { id, title, description: $('#mc-description').value.trim(), color: 'purple', notesExpanded: true, updated: '刚刚', notes: names.map((n, i) => ({ id: `${id}-${i}`, title: n, content: `# ${n}\n\n在这里开始记录……`, favorite: false })) };
     let targetGroup;
-    if (newGroupName) { targetGroup = { id: `g-${Date.now()}`, title: newGroupName, expanded: true, collections: [] }; groups.push(targetGroup); }
+    if (newGroupName) { targetGroup = { id: genId('group'), title: newGroupName, expanded: true, collections: [] }; groups.push(targetGroup); }
     else { targetGroup = groups.find(g => g.id === groupId) || groups[0]; }
+    const title = makeUniqueTitle(rawTitle, targetGroup.collections.map(c => c.title));
+    const collection = { id, title, description: $('#mc-description').value.trim(), color: 'purple', notesExpanded: true, updated: '刚刚', notes: names.map((n, i) => ({ id: `${id}-${i}`, title: n, content: `# ${n}\n\n在这里开始记录……` })) };
     targetGroup.collections.unshift(collection);
     targetGroup.expanded = true;
     selectedGroup = targetGroup;
@@ -98,28 +99,28 @@ function openCreateCollectionModal() {
     filteredGroups = getSortedGroups();
     closeModal();
     renderGroupTree(); renderCollections(); renderEditor();
-    showToast('聚合体已创建');
+    showToast('笔记集已创建');
     scheduleSyncToWorkspace();
   });
   setTimeout(() => $('#mc-title').focus(), 50);
 }
 
-// --- 新建分组弹窗 ---
+// --- 新建主题弹窗 ---
 function openCreateGroupModal() {
-  const body = `<label>分组名称<input id="mg-title" maxlength="20" placeholder="例如：学习" /></label>`;
-  const footer = `<button class="cancel-button" id="mg-cancel">取消</button><button class="submit-button" id="mg-submit">创建分组</button>`;
-  openModal('新建分组', body, footer);
+  const body = `<label>主题名称<input id="mg-title" maxlength="20" placeholder="例如：学习" /></label>`;
+  const footer = `<button class="cancel-button" id="mg-cancel">取消</button><button class="submit-button" id="mg-submit">创建主题</button>`;
+  openModal('新建主题', body, footer);
   $('#mg-cancel').addEventListener('click', closeModal);
   $('#mg-submit').addEventListener('click', () => {
-    const title = $('#mg-title').value.trim();
-    if (!title) { showToast('请输入分组名称'); return; }
-    const group = { id: `g-${Date.now()}`, title, expanded: true, pinned: false, collections: [] };
+    const title = makeUniqueTitle($('#mg-title').value.trim(), groups.map(g => g.title));
+    if (!title) { showToast('请输入主题名称'); return; }
+    const group = { id: genId('group'), title, expanded: true, pinned: false, collections: [] };
     groups.push(group);
     sortGroupsAZ();
     filteredGroups = getSortedGroups();
     closeModal();
     renderGroupTree();
-    showToast('分组已创建');
+    showToast('主题已创建');
     scheduleSyncToWorkspace();
   });
   setTimeout(() => $('#mg-title').focus(), 50);
@@ -132,8 +133,8 @@ function openCreateLooseNoteModal() {
   openModal('新建笔记', body, footer);
   $('#ml-cancel').addEventListener('click', closeModal);
   $('#ml-submit').addEventListener('click', () => {
-    const title = $('#ml-title').value.trim() || '未命名笔记';
-    const note = { id: `loose-${Date.now()}`, title, content: `# ${title}\n\n在这里开始记录……`, favorite: false };
+    const title = makeUniqueTitle($('#ml-title').value.trim() || '未命名笔记', looseNotes.map(n => n.title));
+    const note = { id: genId('loose'), title, content: `# ${title}\n\n在这里开始记录……` };
     looseNotes.unshift(note);
     selectedLooseNote = note;
     closeModal();
@@ -145,16 +146,16 @@ function openCreateLooseNoteModal() {
   setTimeout(() => $('#ml-title').focus(), 50);
 }
 
-// --- 新建笔记（聚合体内）弹窗 ---
+// --- 新建笔记（笔记集内）弹窗 ---
 function openCreateNoteModal() {
   const body = `<label>笔记标题<input id="mn-title" maxlength="40" placeholder="例如：灵感记录" /></label>`;
   const footer = `<button class="cancel-button" id="mn-cancel">取消</button><button class="submit-button" id="mn-submit">创建笔记</button>`;
   openModal('新建笔记', body, footer);
   $('#mn-cancel').addEventListener('click', closeModal);
   $('#mn-submit').addEventListener('click', () => {
-    const title = $('#mn-title').value.trim() || '未命名笔记';
+    const title = makeUniqueTitle($('#mn-title').value.trim() || '未命名笔记', selectedCollection.notes.map(n => n.title));
     if (!selectedCollection) return;
-    const note = { id: `note-${Date.now()}`, title, content: `# ${title}\n\n在这里开始记录……`, favorite: false };
+    const note = { id: genId('note'), title, content: `# ${title}\n\n在这里开始记录……` };
     selectedCollection.notes.push(note);
     selectedCollection.updated = '刚刚';
     selectedCollection.notesExpanded = true;
@@ -199,66 +200,91 @@ function openDeleteNoteModal(noteId, source) {
   });
 }
 
-// --- 删除聚合体确认弹窗 ---
+// --- 删除笔记集确认弹窗 ---
 function openDeleteCollectionModal() {
   if (!selectedCollection) return;
   const noteCount = selectedCollection.notes.length;
   const body = `
-    <p class="modal-text">确定删除聚合体 <b>"${escapeHtml(selectedCollection.title)}"</b> 吗？</p>
-    <p class="modal-subtext">该聚合体包含 ${noteCount} 篇笔记。</p>
+    <p class="modal-text">确定删除笔记集 <b>"${escapeHtml(selectedCollection.title)}"</b> 吗？</p>
+    <p class="modal-subtext">该笔记集包含 ${noteCount} 篇笔记。</p>
     <div class="modal-radio-group">
       <label class="modal-radio">将 ${noteCount} 篇笔记归入零散笔记 <input type="radio" name="del-col" value="loose" checked /></label>
       <label class="modal-radio">将 ${noteCount} 篇笔记移入回收站 <input type="radio" name="del-col" value="trash" /></label>
+      <label class="modal-radio">将整个笔记集放入回收站（保留结构） <input type="radio" name="del-col" value="trash-collection" /></label>
     </div>`;
-  const footer = `<button class="cancel-button" id="dc-cancel">取消</button><button class="danger-button" id="dc-confirm">删除聚合体</button>`;
-  openModal('删除聚合体', body, footer);
+  const footer = `<button class="cancel-button" id="dc-cancel">取消</button><button class="danger-button" id="dc-confirm">删除笔记集</button>`;
+  openModal('删除笔记集', body, footer);
   $('#dc-cancel').addEventListener('click', closeModal);
   $('#dc-confirm').addEventListener('click', () => {
+    if (!selectedCollection) return;
     const choice = document.querySelector('input[name="del-col"]:checked').value;
     const notes = selectedCollection.notes;
     if (choice === 'loose') {
-      notes.forEach(n => looseNotes.unshift({ ...n, id: `loose-${Date.now()}-${n.id}` }));
-    } else {
+      notes.forEach(n => looseNotes.unshift({ id: genId('loose'), title: n.title, content: n.content }));
+    } else if (choice === 'trash') {
       notes.forEach(n => addToTrash(n, selectedCollection.title));
+    } else {
+      // 整集放入回收站：保留笔记集结构，恢复时可还原为笔记集
+      trash.unshift({
+        id: genId('trash'),
+        title: selectedCollection.title,
+        content: '',
+        type: 'collection',
+        collection: {
+          title: selectedCollection.title,
+          description: selectedCollection.description || '',
+          color: selectedCollection.color || 'coral',
+          sourceGroup: selectedGroup ? selectedGroup.title : '',
+          notes: selectedCollection.notes.map(n => ({ title: n.title, content: n.content }))
+        },
+        source: selectedGroup ? selectedGroup.title : '未知',
+        deletedAt: new Date().toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      });
     }
-    const group = groups.find(g => g.id === selectedGroup.id);
+    // 用 id 反查真实所属主题，避免 selectedGroup 与当前笔记集不匹配导致删错主题/删不掉（需刷新才生效的根因）
+    const group = findGroupOfCollection(selectedCollection.id);
+    if (!group) return;
+    selectedGroup = group;
     const idx = group.collections.findIndex(c => c.id === selectedCollection.id);
-    group.collections.splice(idx, 1);
+    if (idx >= 0) group.collections.splice(idx, 1);
     if (group.collections.length > 0) {
       selectedCollection = group.collections[Math.max(0, idx - 1)];
       selectedNote = selectedCollection.notes[0] || null;
     } else {
       const og = groups.find(g => g.collections.length > 0);
       if (og) { selectedGroup = og; selectedCollection = og.collections[0]; selectedNote = selectedCollection.notes[0] || null; }
-      else { selectedCollection = null; selectedNote = null; }
+      else { selectedGroup = groups[0] || null; selectedCollection = null; selectedNote = null; }
     }
     filteredGroups = getSortedGroups();
     closeModal();
-    renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
-    showToast(choice === 'loose' ? '聚合体已删除，笔记已归入零散笔记' : '聚合体已删除，笔记已移入回收站');
+    renderGroupTree(); renderCollections(); renderEditor(); renderTrash(); renderLooseNotes(); updateNavCounts();
+    const toastMsg = choice === 'loose' ? '笔记集已删除，笔记已归入零散笔记'
+      : choice === 'trash' ? '笔记集已删除，笔记已移入回收站'
+      : '笔记集已放入回收站（保留结构，可恢复为笔记集）';
+    showToast(toastMsg);
     scheduleSyncToWorkspace();
   });
 }
 
-// --- 删除分组确认弹窗 ---
+// --- 删除主题确认弹窗 ---
 function openDeleteGroupModal(groupId) {
   const group = groups.find(g => g.id === groupId);
   if (!group) return;
   const totalNotes = group.collections.reduce((t, c) => t + c.notes.length, 0);
   const body = `
-    <p class="modal-text">确定删除分组 <b>"${escapeHtml(group.title)}"</b> 吗？</p>
-    <p class="modal-subtext">该分组包含 ${group.collections.length} 个聚合体、${totalNotes} 篇笔记。</p>
+    <p class="modal-text">确定删除主题 <b>"${escapeHtml(group.title)}"</b> 吗？</p>
+    <p class="modal-subtext">该主题包含 ${group.collections.length} 个笔记集、${totalNotes} 篇笔记。</p>
     <div class="modal-radio-group">
       <label class="modal-radio">将 ${totalNotes} 篇笔记归入零散笔记 <input type="radio" name="del-grp" value="loose" checked /></label>
       <label class="modal-radio">将 ${totalNotes} 篇笔记移入回收站 <input type="radio" name="del-grp" value="trash" /></label>
     </div>`;
-  const footer = `<button class="cancel-button" id="dg-cancel">取消</button><button class="danger-button" id="dg-confirm">删除分组</button>`;
-  openModal('删除分组', body, footer);
+  const footer = `<button class="cancel-button" id="dg-cancel">取消</button><button class="danger-button" id="dg-confirm">删除主题</button>`;
+  openModal('删除主题', body, footer);
   $('#dg-cancel').addEventListener('click', closeModal);
   $('#dg-confirm').addEventListener('click', () => {
     const choice = document.querySelector('input[name="del-grp"]:checked').value;
     group.collections.forEach(c => {
-      if (choice === 'loose') { c.notes.forEach(n => looseNotes.unshift({ ...n, id: `loose-${Date.now()}-${n.id}` })); }
+      if (choice === 'loose') { c.notes.forEach(n => looseNotes.unshift({ id: genId('loose'), title: n.title, content: n.content })); }
       else { c.notes.forEach(n => addToTrash(n, c.title)); }
     });
     const idx = groups.findIndex(g => g.id === groupId);
@@ -273,18 +299,18 @@ function openDeleteGroupModal(groupId) {
     filteredGroups = getSortedGroups();
     closeModal();
     renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
-    showToast(choice === 'loose' ? '分组已删除，笔记已归入零散笔记' : '分组已删除，笔记已移入回收站');
+    showToast(choice === 'loose' ? '主题已删除，笔记已归入零散笔记' : '主题已删除，笔记已移入回收站');
     scheduleSyncToWorkspace();
   });
 }
 
-// --- 重命名分组弹窗 ---
+// --- 重命名主题弹窗 ---
 function openRenameGroupModal(groupId) {
   const group = groups.find(g => g.id === groupId);
   if (!group) return;
-  const body = `<label>分组名称<input id="rg-title" maxlength="20" value="${escapeHtml(group.title)}" /></label>`;
+  const body = `<label>主题名称<input id="rg-title" maxlength="20" value="${escapeHtml(group.title)}" /></label>`;
   const footer = `<button class="cancel-button" id="rg-cancel">取消</button><button class="submit-button" id="rg-submit">保存</button>`;
-  openModal('重命名分组', body, footer);
+  openModal('重命名主题', body, footer);
   $('#rg-cancel').addEventListener('click', closeModal);
   $('#rg-submit').addEventListener('click', () => {
     const title = $('#rg-title').value.trim();
@@ -294,41 +320,41 @@ function openRenameGroupModal(groupId) {
     filteredGroups = getSortedGroups();
     closeModal();
     renderGroupTree(); renderCollections(); renderEditor();
-    showToast('分组已重命名');
+    showToast('主题已重命名');
     scheduleSyncToWorkspace();
   });
   setTimeout(() => $('#rg-title').focus(), 50);
 }
 
-// --- 置顶/取消置顶分组 ---
+// --- 置顶/取消置顶主题 ---
 function togglePinGroup(groupId) {
   const group = groups.find(g => g.id === groupId);
   if (!group) return;
   group.pinned = !group.pinned;
   filteredGroups = getSortedGroups();
   renderGroupTree();
-  showToast(group.pinned ? '分组已置顶' : '已取消置顶');
+  showToast(group.pinned ? '主题已置顶' : '已取消置顶');
   scheduleSyncToWorkspace();
 }
 
-// --- 在分组内新增聚合体弹窗 ---
+// --- 在主题内新增笔记集弹窗 ---
 function openAddCollectionToGroupModal(groupId) {
   const group = groups.find(g => g.id === groupId);
   if (!group) return;
   const body = `
-    <label>聚合体名称<input id="mcg-title" maxlength="40" placeholder="例如：产品研究" /></label>
-    <label>描述<textarea id="mcg-description" maxlength="100" placeholder="简单描述这个聚合体的用途"></textarea></label>
+    <label>笔记集名称<input id="mcg-title" maxlength="40" placeholder="例如：产品研究" /></label>
+    <label>描述<textarea id="mcg-description" maxlength="100" placeholder="简单描述这个笔记集的用途"></textarea></label>
     <label>预置笔记模板<select id="mcg-template"><option value="3">3 篇基础模板</option><option value="1">1 篇空白笔记</option><option value="0">暂不创建笔记</option></select></label>`;
-  const footer = `<button class="cancel-button" id="mcg-cancel">取消</button><button class="submit-button" id="mcg-submit">创建聚合体</button>`;
-  openModal('在「' + group.title + '」内新增聚合体', body, footer);
+  const footer = `<button class="cancel-button" id="mcg-cancel">取消</button><button class="submit-button" id="mcg-submit">创建笔记集</button>`;
+  openModal('在「' + group.title + '」内新增笔记集', body, footer);
   $('#mcg-cancel').addEventListener('click', closeModal);
   $('#mcg-submit').addEventListener('click', () => {
-    const title = $('#mcg-title').value.trim();
-    if (!title) { showToast('请输入聚合体名称'); return; }
-    const id = `collection-${Date.now()}`;
+    const title = makeUniqueTitle($('#mcg-title').value.trim(), group.collections.map(c => c.title));
+    if (!title) { showToast('请输入笔记集名称'); return; }
+    const id = genId('collection');
     const templateCount = Number($('#mcg-template').value);
     const names = ['概览', '待办事项', '灵感与资料'].slice(0, templateCount);
-    const collection = { id, title, description: $('#mcg-description').value.trim(), color: 'purple', notesExpanded: true, updated: '刚刚', notes: names.map((n, i) => ({ id: `${id}-${i}`, title: n, content: `# ${n}\n\n在这里开始记录……`, favorite: false })) };
+    const collection = { id, title, description: $('#mcg-description').value.trim(), color: 'purple', notesExpanded: true, updated: '刚刚', notes: names.map((n, i) => ({ id: `${id}-${i}`, title: n, content: `# ${n}\n\n在这里开始记录……` })) };
     group.collections.unshift(collection);
     sortGroupsAZ();
     group.expanded = true;
@@ -338,13 +364,13 @@ function openAddCollectionToGroupModal(groupId) {
     filteredGroups = getSortedGroups();
     closeModal();
     renderGroupTree(); renderCollections(); renderEditor();
-    showToast('聚合体已创建');
+    showToast('笔记集已创建');
     scheduleSyncToWorkspace();
   });
   setTimeout(() => $('#mcg-title').focus(), 50);
 }
 
-// --- 获取排序后的分组（置顶优先，其余按首字母） ---
+// --- 获取排序后的主题（置顶优先，其余按首字母） ---
 function getSortedGroups() {
   return [...groups].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
@@ -362,18 +388,73 @@ function closeAllContextMenus() {
 let settingsActiveTab = 'general';
 let workspacePath = '';
 
-async function loadWorkspacePath() {
+async function loadSettingsState() {
   try {
-    const res = await fetch('/api/settings');
-    const data = await res.json();
-    workspacePath = data.workspacePath || '';
-  } catch (e) {
-    workspacePath = '';
+    const d = await window.api.loadSettings();
+    settings.theme = d.theme || 'light';
+    settings.trashLimit = d.trashLimit || 30;
+    settings.workspacePath = d.workspacePath || '';
+  } catch (e) {}
+  workspacePath = settings.workspacePath;
+  applyTheme();
+  applyPanelState();
+}
+
+// 主题与面板折叠的本地应用 + 持久化
+function applyTheme() {
+  const dark = settings.theme === 'dark';
+  document.body.classList.toggle('dark', dark);
+  const t = $('#theme-toggle');
+  if (t) t.textContent = dark ? '☀' : '☾';
+}
+// 三栏级联折叠（§4.7）：底部圆形开关 + 渐进式显隐。
+// 顺序约束：必须先收起主题树，才能收起笔记集。
+const COLLAPSE_ORDER = ['group', 'collection'];
+let collapseStack = []; // 当前已收起的面板（按收起顺序）
+
+function canCollapsePanel(p) {
+  if (p === 'collection') return collapseStack.includes('group');
+  return true;
+}
+function nextCollapsible() {
+  return COLLAPSE_ORDER.find(p => !collapseStack.includes(p) && canCollapsePanel(p)) || null;
+}
+function applyPanelState() {
+  const ws = $('.workspace');
+  if (ws) {
+    ws.classList.toggle('group-collapsed', collapseStack.includes('group'));
+    ws.classList.toggle('collection-collapsed', collapseStack.includes('collection'));
   }
+  const dock = $('#collapse-dock');
+  if (dock) dock.classList.toggle('show', currentView === 'collections');
+  renderCollapseDock();
+}
+function renderCollapseDock() {
+  const dock = $('#collapse-dock');
+  if (!dock) return;
+  const next = nextCollapsible();
+  const cb = $('#dock-collapse');
+  const eb = $('#dock-expand');
+  if (cb) cb.style.display = next ? 'grid' : 'none';
+  if (eb) eb.style.display = collapseStack.length ? 'grid' : 'none';
+}
+function dockCollapse() {
+  const next = nextCollapsible();
+  if (!next) return;
+  collapseStack.push(next);
+  applyPanelState();
+}
+function dockExpand() {
+  if (!collapseStack.length) return;
+  collapseStack.pop();
+  applyPanelState();
+}
+async function persistSettings() {
+  try { await window.api.saveSettings(settings); } catch (e) {}
 }
 
 function openSettingsModal() {
-  loadWorkspacePath().then(() => {
+  loadSettingsState().then(() => {
     const container = $('#modal-container');
     container.innerHTML = `
       <div class="settings-modal">
@@ -407,7 +488,17 @@ function openSettingsModal() {
           settings.trashLimit = val;
           enforceTrashLimit();
           updateNavCounts(); renderTrash();
+          persistSettings();
         }
+      });
+      $$('#set-theme button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          settings.theme = btn.dataset.theme;
+          applyTheme();
+          $$('#set-theme button').forEach(b => b.classList.toggle('active', b === btn));
+          persistSettings();
+          showToast(settings.theme === 'dark' ? '已切换深色模式' : '已切换浅色模式');
+        });
       });
     }
 
@@ -424,6 +515,16 @@ function renderGeneralSettings() {
     <div class="settings-section">
       <h3>偏好设置</h3>
       <div class="settings-card">
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">外观</div>
+            <div class="settings-desc">浅色或深色主题，重启后保持</div>
+          </div>
+          <div class="seg" id="set-theme">
+            <button data-theme="light" class="${settings.theme !== 'dark' ? 'active' : ''}">浅色</button>
+            <button data-theme="dark" class="${settings.theme === 'dark' ? 'active' : ''}">深色</button>
+          </div>
+        </div>
         <div class="settings-row">
           <div>
             <div class="settings-label">回收站保留数量</div>
@@ -458,9 +559,8 @@ function renderWorkspaceSettings() {
 async function refreshFromWorkspace() {
   try {
     showToast('正在扫描工作区…');
-    const res = await fetch('/api/workspace');
-    if (!res.ok) throw new Error('扫描失败');
-    const data = await res.json();
+    const data = await window.api.scan();
+    if (data.error) throw new Error(data.error);
     groups.length = 0;
     if (data.groups) data.groups.forEach(g => groups.push(g));
     sortGroupsAZ();
@@ -496,14 +596,9 @@ function openChangeWorkspaceModal() {
     if (!newPath) { showToast('请输入目录路径'); return; }
     const transfer = $('#ws-transfer').checked;
     try {
-      const res = await fetch('/api/migrate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({newPath, transfer})
-      });
-      const data = await res.json();
+      const data = await window.api.migrate({newPath, transfer});
       if (data.ok) {
-        workspacePath = newPath;
+        workspacePath = newPath; settings.workspacePath = newPath;
         closeModal();
         showToast('工作区已更改');
         // 刷新以加载新工作区内容
@@ -535,7 +630,7 @@ function openEmptyTrashModal() {
 
 // ==================== 回收站逻辑 ====================
 function addToTrash(note, source) {
-  trash.unshift({ id: `trash-${Date.now()}-${note.id}`, title: note.title, content: note.content, source: source || '未知', deletedAt: new Date().toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) });
+  trash.unshift({ id: genId('trash'), title: note.title, content: note.content, source: source || '未知', deletedAt: new Date().toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) });
   enforceTrashLimit();
 }
 function enforceTrashLimit() {
@@ -546,7 +641,7 @@ function restoreNote(trashId) {
   if (idx < 0) return;
   const item = trash[idx];
   trash.splice(idx, 1);
-  looseNotes.unshift({ id: `loose-${Date.now()}`, title: item.title, content: item.content, favorite: false });
+  looseNotes.unshift({ id: genId('loose'), title: item.title, content: item.content });
   renderTrash(); renderLooseNotes(); updateNavCounts();
   showToast('笔记已恢复到零散笔记');
   scheduleSyncToWorkspace();
@@ -575,7 +670,7 @@ function switchView(view) {
   if (view === 'collections') {
     $('#view-collections').classList.add('active');
     $('#nav-collections').classList.add('active');
-    $('#breadcrumbs').innerHTML = '<span>我的空间</span><i>/</i><b>聚合体</b>';
+    $('#breadcrumbs').innerHTML = '<span>我的空间</span><i>/</i><b>笔记集</b>';
   } else if (view === 'loose') {
     $('#view-loose').classList.add('active');
     $('#nav-loose').classList.add('active');
@@ -586,10 +681,34 @@ function switchView(view) {
     $('#nav-trash').classList.add('active');
     $('#breadcrumbs').innerHTML = '<span>我的空间</span><i>/</i><b>回收站</b>';
     renderTrash();
+  } else if (view === 'search') {
+    $('#view-search').classList.add('active');
+    $('#nav-search').classList.add('active');
+    $('#breadcrumbs').innerHTML = '<span>我的空间</span><i>/</i><b>搜索</b>';
+    runSearch($('#global-search').value);
   }
+  const dock = $('#collapse-dock');
+  if (dock) dock.classList.toggle('show', view === 'collections');
+  renderCollapseDock();
 }
 
 // ==================== 组树渲染 ====================
+// 在已有标题集合中为 base 生成唯一标题，避免同名文件互相覆盖
+function makeUniqueTitle(base, existingTitles) {
+  const has = existingTitles || [];
+  if (!has.includes(base)) return base;
+  let i = 2;
+  while (has.includes(`${base} (${i})`)) i++;
+  return `${base} (${i})`;
+}
+
+// 生成全局唯一 id：Date.now(36) + 自增序号 + 随机串，避免快速创建时 id 撞车导致“笔记无法打开”
+let _idSeq = 0;
+function genId(prefix) {
+  _idSeq = (_idSeq + 1) % 1000000;
+  return `${prefix}-${Date.now().toString(36)}${_idSeq.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
 function renderGroupTree(list = filteredGroups) {
   const tree = $('#group-tree');
   tree.innerHTML = list.map(group => {
@@ -598,7 +717,6 @@ function renderGroupTree(list = filteredGroups) {
       const isSelected = col.id === selectedCollection?.id;
       return `<div class="tree-collection-wrapper ${isSelected ? 'selected' : ''}">
         <button class="tree-collection" data-collection="${col.id}" data-group="${group.id}">
-          <span class="collection-icon ${col.color}">◈</span>
           <span class="tree-collection-name">${escapeHtml(col.title)}</span>
           <span class="tree-collection-count">${col.notes.length}</span>
         </button>
@@ -609,7 +727,7 @@ function renderGroupTree(list = filteredGroups) {
         <span class="tree-chevron ${group.expanded ? 'expanded' : ''}">▶</span>
         ${group.pinned ? '<span class="tree-pin-icon">📌</span>' : ''}
         <span class="tree-group-title">${escapeHtml(group.title)}</span>
-        <span class="tree-group-menu" data-group="${group.id}" title="更多操作">⋯</span>
+        <span class="tree-group-menu" data-group="${group.id}" title="更多操作"></span>
       </button>
       <div class="tree-children ${group.expanded ? '' : 'collapsed'}">
         ${collectionsHtml}
@@ -619,42 +737,50 @@ function renderGroupTree(list = filteredGroups) {
   updateNavCounts();
 }
 
-// ==================== 聚合体面板渲染 ====================
+// ==================== 笔记集面板渲染 ====================
+// 选定主题后，笔记集栏位展示该主题下的【所有】笔记集（逻辑修正：之前只渲染单个 selectedCollection）
 function renderCollections() {
   const list = $('#collections-list');
-  if (!selectedCollection) {
-    list.innerHTML = '<div class="empty-state">请从左侧组视图中选择一个聚合体</div>';
+  if (!selectedGroup) {
+    list.innerHTML = '<div class="empty-state">请从左侧主题视图中选择一个主题</div>';
     return;
   }
-  const col = selectedCollection;
-  const expanded = col.notesExpanded !== false;
-  list.innerHTML = `<article class="collection-card selected">
-    <div class="collection-card-top">
-      <span class="collection-icon ${col.color}">◈</span>
-      <span class="collection-count">${col.notes.length} 篇</span>
-    </div>
-    <div class="collection-title-row">
-      <h2>${escapeHtml(col.title)}</h2>
-      <div class="collection-actions">
-        <button class="collection-menu-btn" data-action="open-menu" title="更多操作">⋯</button>
+  const cols = selectedGroup.collections;
+  if (!cols.length) {
+    list.innerHTML = '<div class="empty-state">该主题下还没有笔记集</div>';
+    return;
+  }
+  list.innerHTML = cols.map(col => {
+    const expanded = col.notesExpanded !== false;
+    const isSel = col.id === selectedCollection?.id;
+    const notes = col.notes || [];
+    return `<article class="collection-card ${isSel ? 'selected' : ''}" data-collection="${col.id}">
+      <div class="collection-card-top">
+        <span class="collection-count">${notes.length} 篇</span>
       </div>
-    </div>
-    <p>${escapeHtml(col.description || '暂无描述')}</p>
-    <div class="collection-notes ${expanded ? '' : 'collapsed'}">
-      <button class="notes-toggle" data-action="toggle-notes">
-        <span class="notes-toggle-chevron ${expanded ? 'expanded' : ''}">▶</span>
-        <span>笔记列表 (${col.notes.length})</span>
-      </button>
-      <div class="notes-list ${expanded ? '' : 'hidden'}">
-        ${col.notes.map(note => `<button class="collection-note ${note.id === selectedNote?.id ? 'active' : ''}" data-note="${note.id}">
-          <span class="note-bullet">${note.favorite ? '★' : '·'}</span>
-          <span class="note-title-text">${escapeHtml(note.title)}</span>
-          <i data-action="delete-note" data-note="${note.id}" title="删除笔记">×</i>
-        </button>`).join('')}
+      <div class="collection-title-row">
+        <h2>${escapeHtml(col.title)}</h2>
+        <div class="collection-actions">
+          <button class="collection-menu-btn" data-action="open-menu" data-collection="${col.id}" title="更多操作"></button>
+        </div>
       </div>
-    </div>
-    <div class="collection-meta"><span>${col.updated}</span></div>
-  </article>`;
+      <p>${escapeHtml(col.description || '暂无描述')}</p>
+      <div class="collection-notes ${expanded ? '' : 'collapsed'}">
+        <button class="notes-toggle" data-action="toggle-notes" data-collection="${col.id}">
+          <span class="notes-toggle-chevron ${expanded ? 'expanded' : ''}">▶</span>
+          <span>笔记列表 (${notes.length})</span>
+        </button>
+        <div class="notes-list ${expanded ? '' : 'hidden'}" data-collection="${col.id}">
+          ${notes.map(note => `<button class="collection-note ${note.id === selectedNote?.id ? 'active' : ''}" data-note="${note.id}" data-collection="${col.id}">
+            <span class="note-bullet">·</span>
+            <span class="note-title-text">${escapeHtml(note.title)}</span>
+            <i data-action="delete-note" data-note="${note.id}" data-collection="${col.id}" title="删除笔记">×</i>
+          </button>`).join('')}
+        </div>
+      </div>
+      <div class="collection-meta"><span>${col.updated}</span></div>
+    </article>`;
+  }).join('');
 }
 
 // ==================== 编辑器渲染 ====================
@@ -669,7 +795,7 @@ function updateBreadcrumbs() {
   if (selectedGroup && selectedCollection) {
     bc.innerHTML = `<span>我的空间</span><i>/</i><span>${escapeHtml(selectedGroup.title)}</span><i>/</i><b>${escapeHtml(selectedCollection.title)}</b>`;
   } else {
-    bc.innerHTML = '<span>我的空间</span><i>/</i><b>聚合体</b>';
+    bc.innerHTML = '<span>我的空间</span><i>/</i><b>笔记集</b>';
   }
 }
 
@@ -682,11 +808,11 @@ function renderLooseNotes(list = filteredLooseNotes) {
     container.innerHTML = '<div class="empty-state">没有匹配的笔记</div>';
   } else {
     container.innerHTML = list.map(note => `
-      <button class="loose-note-item ${note.id === selectedLooseNote?.id ? 'active' : ''}" data-note="${note.id}">
-        <span class="note-bullet">${note.favorite ? '★' : '·'}</span>
+      <div class="loose-note-item ${note.id === selectedLooseNote?.id ? 'active' : ''}" data-note="${note.id}">
+        <span class="note-bullet">·</span>
         <span class="note-title-text">${escapeHtml(note.title)}</span>
-        <span class="loose-note-menu" data-action="open-loose-menu" data-note="${note.id}" title="更多操作">⋯</span>
-      </button>`).join('');
+        <button class="loose-note-menu" data-action="open-loose-menu" data-note="${note.id}" title="更多操作" aria-label="更多操作"></button>
+      </div>`).join('');
   }
 }
 function renderLooseEditor() {
@@ -699,21 +825,27 @@ function renderLooseEditor() {
 // ==================== 回收站渲染 ====================
 function renderTrash(list = filteredTrash) {
   const container = $('#trash-list');
+  const cnt = $('#trash-count');
+  if (cnt) cnt.textContent = trash.length;
   if (trash.length === 0) {
     container.innerHTML = '<div class="empty-state">回收站为空</div>';
   } else if (list.length === 0) {
     container.innerHTML = '<div class="empty-state">没有匹配的笔记</div>';
   } else {
-    container.innerHTML = list.map(item => `
-      <div class="trash-item">
+    container.innerHTML = list.map(item => {
+      const isCol = item.type === 'collection';
+      const n = isCol && item.collection ? item.collection.notes.length : 0;
+      return `
+      <div class="trash-item ${isCol ? 'trash-item-collection' : ''}">
         <div class="trash-item-info">
-          <span class="trash-item-title">${escapeHtml(item.title)}</span>
-          <span class="trash-item-meta">来源：${escapeHtml(item.source)} · 删除于 ${item.deletedAt}</span>
+          <span class="trash-item-title">${isCol ? '<span class="trash-badge">笔记集</span>' : ''}${escapeHtml(item.title)}</span>
+          <span class="trash-item-meta">${isCol ? `含 ${n} 篇笔记 · 来源：${escapeHtml(item.source)}` : `来源：${escapeHtml(item.source)} · 删除于 ${item.deletedAt}`}</span>
         </div>
         <div class="trash-item-actions">
-          <button data-action="open-trash-menu" data-id="${item.id}" title="更多操作">⋯</button>
+          <button data-action="open-trash-menu" data-id="${item.id}" title="更多操作"></button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 }
 
@@ -763,9 +895,131 @@ function selectGroup(groupId) {
   }
 }
 
+// 选中笔记集内的某篇笔记：仅切换高亮，不重建整个面板，
+// 避免长笔记列表（>5 条可滚动）浏览后选中靠后笔记时滚动位置被重置回置顶
+function selectNoteInCollection(noteId, collectionId) {
+  const col = findCollectionById(collectionId);
+  if (!col) return;
+  selectedCollection = col;
+  selectedNote = col.notes.find(n => n.id === noteId) || null;
+  $$('.collection-card').forEach(card => card.classList.toggle('selected', card.dataset.collection === collectionId));
+  $$('.collection-note').forEach(btn => btn.classList.toggle('active', btn.dataset.note === noteId && btn.dataset.collection === collectionId));
+  renderEditor();
+}
+
 // ==================== 导航计数 ====================
+// 底部页脚"已同步 / 共 N 篇笔记"已移除；若日后恢复页脚，此函数会安全更新计数
 function updateNavCounts() {
-  $('#note-count').textContent = countAllNotes();
+  const el = $('#note-count');
+  if (el) el.textContent = countAllNotes();
+}
+
+// ==================== 搜索（独立视图） ====================
+let searchResults = [];
+
+// 在已转义的安全文本内，将关键词（大小写不敏感）包裹为 <mark>
+function highlight(text, kw) {
+  if (!kw) return escapeHtml(text);
+  const lower = text.toLowerCase();
+  const kl = kw.toLowerCase();
+  let result = '', i = 0;
+  while (i < text.length) {
+    const found = lower.indexOf(kl, i);
+    if (found < 0) { result += escapeHtml(text.slice(i)); break; }
+    result += escapeHtml(text.slice(i, found));
+    result += '<mark>' + escapeHtml(text.slice(found, found + kl.length)) + '</mark>';
+    i = found + kl.length;
+  }
+  return result;
+}
+
+// 去除 Markdown 标记后的片段，命中关键词时截取命中上下文并高亮
+function snippet(text, kw) {
+  const plain = text.replace(/[#>*~_`\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!kw) {
+    const s = plain.slice(0, 120);
+    return escapeHtml(s) + (plain.length > 120 ? '…' : '');
+  }
+  const lower = plain.toLowerCase();
+  const kl = kw.toLowerCase();
+  const idx = lower.indexOf(kl);
+  if (idx < 0) {
+    const s = plain.slice(0, 120);
+    return escapeHtml(s) + (plain.length > 120 ? '…' : '');
+  }
+  const start = Math.max(0, idx - 30);
+  const end = Math.min(plain.length, idx + kl.length + 90);
+  const windowText = (start > 0 ? '…' : '') + plain.slice(start, end) + (end < plain.length ? '…' : '');
+  return highlight(windowText, kw);
+}
+
+function runSearch(rawKw) {
+  const kw = (rawKw || '').trim();
+  const results = [];
+  if (kw) {
+    const lkw = kw.toLowerCase();
+    for (const g of groups) {
+      for (const c of g.collections) {
+        for (const n of c.notes) {
+          if ((n.title + '\n' + n.content).toLowerCase().includes(lkw)) {
+            results.push({ type: 'collection', groupId: g.id, collectionId: c.id, noteId: n.id, title: n.title, path: `${g.title} › ${c.title}`, content: n.content });
+          }
+        }
+      }
+    }
+    for (const n of looseNotes) {
+      if ((n.title + '\n' + n.content).toLowerCase().includes(lkw)) {
+        results.push({ type: 'loose', noteId: n.id, title: n.title, path: '零散笔记', content: n.content });
+      }
+    }
+  }
+  searchResults = results;
+  renderSearchResults(kw);
+}
+
+function renderSearchResults(kw) {
+  const container = $('#search-results');
+  const stats = $('#search-stats');
+  if (!kw.trim()) {
+    stats.textContent = '';
+    container.innerHTML = '<div class="search-empty"><span class="se-icon">⌕</span><span>输入关键词，跨所有笔记（标题与正文）搜索</span></div>';
+    return;
+  }
+  if (searchResults.length === 0) {
+    stats.textContent = '';
+    container.innerHTML = '<div class="search-empty"><span class="se-icon">∅</span><span>没有匹配的笔记</span></div>';
+    return;
+  }
+  stats.textContent = `找到 ${searchResults.length} 条结果`;
+  container.innerHTML = searchResults.map((r, i) => `
+    <button class="search-result-card" data-index="${i}">
+      <div class="search-result-head">
+        <span class="search-result-title">${highlight(r.title, kw)}</span>
+        <span class="search-result-path">${escapeHtml(r.path)}</span>
+      </div>
+      <div class="search-result-snippet">${snippet(r.content, kw)}</div>
+    </button>`).join('');
+}
+
+function jumpToSearchResult(r) {
+  if (!r) return;
+  if (r.type === 'collection') {
+    const group = groups.find(g => g.id === r.groupId);
+    const col = group?.collections.find(c => c.id === r.collectionId);
+    const note = col?.notes.find(n => n.id === r.noteId);
+    if (!group || !col || !note) { showToast('该笔记已不存在'); return; }
+    selectedGroup = group; group.expanded = true;
+    selectedCollection = col; col.notesExpanded = true;
+    selectedNote = note;
+    switchView('collections');
+    renderGroupTree(); renderCollections(); renderEditor();
+  } else {
+    const note = looseNotes.find(n => n.id === r.noteId);
+    if (!note) { showToast('该笔记已不存在'); return; }
+    selectedLooseNote = note;
+    switchView('loose');
+    renderLooseNotes(); renderLooseEditor();
+  }
 }
 
 // ==================== 事件绑定 ====================
@@ -774,6 +1028,7 @@ function updateNavCounts() {
 $('#nav-collections').addEventListener('click', e => { e.preventDefault(); switchView('collections'); });
 $('#nav-loose').addEventListener('click', e => { e.preventDefault(); switchView('loose'); });
 $('#nav-trash').addEventListener('click', e => { e.preventDefault(); switchView('trash'); });
+$('#nav-search').addEventListener('click', e => { e.preventDefault(); switchView('search'); $('#global-search').focus(); });
 
 // 组树
 $('#group-tree').addEventListener('click', e => {
@@ -787,54 +1042,88 @@ $('#group-tree').addEventListener('click', e => {
   if (colBtn) { selectCollection(colBtn.dataset.collection); return; }
 });
 
-// 聚合体面板
+// 笔记集面板（每屏展示所选主题下的全部笔记集，点击卡片即选中该笔记集）
 $('#collections-list').addEventListener('click', e => {
+  const card = e.target.closest('.collection-card');
+  const colId = card ? card.dataset.collection : null;
+  const col = colId ? findCollectionById(colId) : selectedCollection;
   const action = e.target.dataset.action;
-  if (action === 'delete-note') { e.stopPropagation(); openDeleteNoteModal(e.target.dataset.note, 'collection'); return; }
+  if (action === 'delete-note') { e.stopPropagation(); if (col) selectedCollection = col; openDeleteNoteModal(e.target.dataset.note, 'collection'); return; }
   if (action === 'toggle-notes') {
-    if (selectedCollection) { selectedCollection.notesExpanded = !selectedCollection.notesExpanded; renderCollections(); }
+    if (col) { col.notesExpanded = !col.notesExpanded; renderCollections(); }
     return;
   }
-  if (action === 'open-menu') { e.stopPropagation(); openCollectionContextMenu(e.target); return; }
+  if (action === 'open-menu') { e.stopPropagation(); if (col) selectedCollection = col; openCollectionContextMenu(e.target); return; }
   const noteBtn = e.target.closest('.collection-note');
   if (noteBtn) {
-    selectedNote = selectedCollection.notes.find(n => n.id === noteBtn.dataset.note);
-    renderCollections(); renderEditor();
+    if (col) selectedCollection = col;
+    selectNoteInCollection(noteBtn.dataset.note, noteBtn.dataset.collection || col.id);
     return;
   }
+  if (card) { selectCollection(colId); }
 });
 
-// --- 移动到聚合体弹窗（零散笔记） ---
-function openMoveLooseToCollectionModal(note) {
-  const groupOptions = getSortedGroups().map(g => 
-    `<optgroup label="${escapeHtml(g.title)}">` +
-    g.collections.map(c => `<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('') +
-    `</optgroup>`
-  ).join('');
+// --- 选择目标笔记集弹窗：两个联动下拉框（主题 → 笔记集） ---
+function openPickCollectionModal({ title, message, onPick }) {
+  const groupsSorted = getSortedGroups();
+  const defaultGroup = (selectedGroup && groupsSorted.some(g => g.id === selectedGroup.id))
+    ? selectedGroup
+    : groupsSorted[0];
+  const groupOptions = groupsSorted.map(g => `<option value="${g.id}">${escapeHtml(g.title)}</option>`).join('');
   const body = `
-    <p class="modal-text">将 <b>"${escapeHtml(note.title)}"</b> 移动到指定聚合体</p>
-    <label>选择目标聚合体<select id="mlt-collection">${groupOptions}</select></label>`;
-  const footer = `<button class="cancel-button" id="mlt-cancel">取消</button><button class="submit-button" id="mlt-confirm">移动</button>`;
-  openModal('移动笔记', body, footer);
-  $('#mlt-cancel').addEventListener('click', closeModal);
-  $('#mlt-confirm').addEventListener('click', () => {
-    const collectionId = $('#mlt-collection').value;
-    const targetCollection = findCollectionById(collectionId);
-    if (!targetCollection) { showToast('目标聚合体不存在'); return; }
-    const idx = looseNotes.findIndex(n => n.id === note.id);
-    if (idx < 0) return;
-    looseNotes.splice(idx, 1);
-    targetCollection.notes.unshift({ id: `note-${Date.now()}`, title: note.title, content: note.content, favorite: false });
-    targetCollection.updated = '刚刚';
-    targetCollection.notesExpanded = true;
+    <p class="modal-text">${message}</p>
+    <label>目标主题<select id="pick-group">${groupOptions}</select></label>
+    <label>目标笔记集<select id="pick-collection"></select></label>
+    <p class="pick-hint" id="pick-hint"></p>`;
+  const footer = `<button type="button" class="cancel-button" id="pick-cancel">取消</button><button type="button" class="submit-button" id="pick-confirm">确定</button>`;
+  openModal(title, body, footer);
+  const groupSel = $('#pick-group');
+  const colSel = $('#pick-collection');
+  const hint = $('#pick-hint');
+
+  function refreshCollections() {
+    const g = groups.find(x => x.id === groupSel.value);
+    if (!g || g.collections.length === 0) {
+      colSel.innerHTML = `<option value="" disabled selected>该主题下还没有笔记集</option>`;
+      colSel.disabled = true;
+      hint.textContent = '该主题下暂无笔记集，请选择其他主题';
+    } else {
+      colSel.disabled = false;
+      colSel.innerHTML = g.collections.map(c => `<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('');
+      hint.textContent = '';
+    }
+  }
+
+  $('#pick-cancel').addEventListener('click', closeModal);
+  groupSel.addEventListener('change', refreshCollections);
+  groupSel.value = defaultGroup ? defaultGroup.id : (groupsSorted[0] ? groupsSorted[0].id : '');
+  refreshCollections();
+
+  $('#pick-confirm').addEventListener('click', () => {
+    const collectionId = colSel.value;
+    if (!collectionId) { showToast('请选择目标笔记集'); return; }
+    const target = findCollectionById(collectionId);
+    if (!target) { showToast('目标笔记集不存在'); return; }
     closeModal();
-    renderLooseNotes(); renderLooseEditor(); renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
-    showToast(`笔记已移动到「${targetCollection.title}」`);
-    scheduleSyncToWorkspace();
+    onPick(target);
   });
 }
 
-// --- 分组三点菜单 ---
+// 零散笔记 → 指定笔记集（两步式）
+function moveLooseNoteToCollection(note, targetCollection) {
+  const idx = looseNotes.findIndex(n => n.id === note.id);
+  if (idx < 0) return;
+  looseNotes.splice(idx, 1);
+  targetCollection.notes.unshift({ id: genId('note'), title: note.title, content: note.content });
+  targetCollection.updated = '刚刚';
+  targetCollection.notesExpanded = true;
+  selectedLooseNote = looseNotes[0] || null;
+  renderLooseNotes(); renderLooseEditor(); renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
+  showToast(`笔记已移动到「${targetCollection.title}」`);
+  scheduleSyncToWorkspace();
+}
+
+// --- 主题三点菜单 ---
 function openLooseNoteContextMenu(btn) {
   const noteId = btn.dataset.note;
   const note = looseNotes.find(n => n.id === noteId);
@@ -843,7 +1132,7 @@ function openLooseNoteContextMenu(btn) {
   const menu = document.createElement('div');
   menu.className = 'context-menu';
   menu.innerHTML = `
-    <button data-ctx-action="move-to-collection">移动到聚合体…</button>
+    <button data-ctx-action="move-to-collection">移动到笔记集…</button>
     <button data-ctx-action="move-to-trash" data-ctx-note="${noteId}">移入回收站</button>
     <button data-ctx-action="delete" data-ctx-note="${noteId}" class="ctx-danger">彻底删除</button>
   `;
@@ -855,7 +1144,11 @@ function openLooseNoteContextMenu(btn) {
     if (!ctxAction) return;
     closeAllContextMenus();
     if (ctxAction === 'move-to-collection') {
-      openMoveLooseToCollectionModal(note);
+      openPickCollectionModal({
+        title: '移动笔记',
+        message: `将 <b>"${escapeHtml(note.title)}"</b> 移动到指定笔记集`,
+        onPick: target => moveLooseNoteToCollection(note, target)
+      });
     } else if (ctxAction === 'move-to-trash') {
       addToTrash(note, '零散笔记');
       const idx = looseNotes.findIndex(n => n.id === nid);
@@ -893,10 +1186,10 @@ function openGroupContextMenu(btn, groupId) {
   const menu = document.createElement('div');
   menu.className = 'context-menu';
   menu.innerHTML = `
-    <button data-ctx-action="add-collection" data-ctx-group="${groupId}">在该分组内新增聚合体</button>
-    <button data-ctx-action="rename" data-ctx-group="${groupId}">重命名分组</button>
-    <button data-ctx-action="pin" data-ctx-group="${groupId}">${group.pinned ? '取消置顶' : '置顶分组'}</button>
-    <button data-ctx-action="delete" data-ctx-group="${groupId}" class="ctx-danger">删除分组</button>
+    <button data-ctx-action="add-collection" data-ctx-group="${groupId}">在该主题内新增笔记集</button>
+    <button data-ctx-action="rename" data-ctx-group="${groupId}">重命名主题</button>
+    <button data-ctx-action="pin" data-ctx-group="${groupId}">${group.pinned ? '取消置顶' : '置顶主题'}</button>
+    <button data-ctx-action="delete" data-ctx-group="${groupId}" class="ctx-danger">删除主题</button>
   `;
   positionContextMenu(menu, btn);
   document.body.appendChild(menu);
@@ -920,8 +1213,13 @@ function openTrashNoteContextMenu(btn) {
   closeAllContextMenus();
   const menu = document.createElement('div');
   menu.className = 'context-menu';
-  menu.innerHTML = `
-    <button data-ctx-action="restore-to">恢复到指定聚合体…</button>
+  menu.innerHTML = item.type === 'collection'
+    ? `
+    <button data-ctx-action="restore-collection">恢复为笔记集…</button>
+    <button data-ctx-action="perm-delete" class="ctx-danger">永久删除</button>
+  `
+    : `
+    <button data-ctx-action="restore-to">恢复到指定笔记集…</button>
     <button data-ctx-action="restore-loose">恢复到零散笔记</button>
     <button data-ctx-action="perm-delete" class="ctx-danger">永久删除</button>
   `;
@@ -931,46 +1229,74 @@ function openTrashNoteContextMenu(btn) {
     const ctxAction = e.target.dataset.ctxAction;
     if (!ctxAction) return;
     closeAllContextMenus();
-    if (ctxAction === 'restore-to') openRestoreToCollectionModal(trashId);
+    if (ctxAction === 'restore-to') openPickCollectionModal({
+      title: '恢复笔记',
+      message: `将 <b>"${escapeHtml(item.title)}"</b> 恢复到指定笔记集`,
+      onPick: target => restoreTrashToCollection(item, target)
+    });
     else if (ctxAction === 'restore-loose') restoreNote(trashId);
+    else if (ctxAction === 'restore-collection') openRestoreCollectionToGroup(item);
     else if (ctxAction === 'perm-delete') permanentDelete(trashId);
   });
 }
 
-// --- 恢复到指定聚合体弹窗 ---
-function openRestoreToCollectionModal(trashId) {
-  const item = trash.find(t => t.id === trashId);
-  if (!item) return;
-  const groupOptions = getSortedGroups().map(g => 
-    `<optgroup label="${escapeHtml(g.title)}">` +
-    g.collections.map(c => `<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('') +
-    `</optgroup>`
-  ).join('');
-  const body = `
-    <p class="modal-text">将 <b>"${escapeHtml(item.title)}"</b> 恢复到指定聚合体</p>
-    <label>选择目标聚合体<select id="rt-collection">${groupOptions}</select></label>`;
-  const footer = `<button class="cancel-button" id="rt-cancel">取消</button><button class="submit-button" id="rt-confirm">恢复</button>`;
-  openModal('恢复笔记', body, footer);
-  $('#rt-cancel').addEventListener('click', closeModal);
-  $('#rt-confirm').addEventListener('click', () => {
-    const collectionId = $('#rt-collection').value;
-    const targetCollection = findCollectionById(collectionId);
-    if (!targetCollection) { showToast('目标聚合体不存在'); return; }
-    const idx = trash.findIndex(t => t.id === trashId);
-    if (idx < 0) return;
-    const item = trash[idx];
-    trash.splice(idx, 1);
-    targetCollection.notes.unshift({ id: `note-${Date.now()}`, title: item.title, content: item.content, favorite: false });
-    targetCollection.updated = '刚刚';
-    targetCollection.notesExpanded = true;
-    closeModal();
-    renderTrash(); renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
-    showToast(`笔记已恢复到「${targetCollection.title}」`);
-    scheduleSyncToWorkspace();
-  });
+// 回收站笔记 → 指定笔记集（两步式）
+function restoreTrashToCollection(item, targetCollection) {
+  const idx = trash.findIndex(t => t.id === item.id);
+  if (idx < 0) return;
+  trash.splice(idx, 1);
+  targetCollection.notes.unshift({ id: genId('note'), title: item.title, content: item.content });
+  targetCollection.updated = '刚刚';
+  targetCollection.notesExpanded = true;
+  renderTrash(); renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
+  showToast(`笔记已恢复到「${targetCollection.title}」`);
+  scheduleSyncToWorkspace();
 }
 
-// --- 聚合体三点菜单 ---
+// 回收站「整集」→ 选主题恢复为笔记集
+function openRestoreCollectionToGroup(item) {
+  if (item.type !== 'collection' || !item.collection) { showToast('该条目不是笔记集'); return; }
+  const groupOptions = getSortedGroups().map(g => `<option value="${g.id}">${escapeHtml(g.title)}</option>`).join('');
+  const body = `
+    <p class="modal-text">将笔记集 <b>"${escapeHtml(item.collection.title)}"</b> 恢复为笔记集，放入：</p>
+    <label>选择目标主题<select id="rc-group">${groupOptions}</select></label>`;
+  const footer = `<button class="cancel-button" id="rc-cancel">取消</button><button class="submit-button" id="rc-confirm">恢复</button>`;
+  openModal('恢复笔记集', body, footer);
+  $('#rc-cancel').addEventListener('click', closeModal);
+  $('#rc-confirm').addEventListener('click', () => {
+    const gid = $('#rc-group').value;
+    const group = groups.find(g => g.id === gid);
+    if (!group) { showToast('目标主题不存在'); return; }
+    restoreTrashCollection(item, group);
+    closeModal();
+  });
+}
+function restoreTrashCollection(item, group) {
+  const col = item.collection;
+  let title = col.title;
+  if (group.collections.some(c => c.title === title)) title = `${col.title} (恢复)`;
+  const newCol = {
+    id: genId('col'),
+    title,
+    description: col.description || '',
+    color: col.color || 'coral',
+    notesExpanded: true,
+    updated: '刚刚',
+    notes: (col.notes || []).map(n => ({ id: genId('note'), title: n.title, content: n.content }))
+  };
+  group.collections.unshift(newCol);
+  const idx = trash.findIndex(t => t.id === item.id);
+  if (idx >= 0) trash.splice(idx, 1);
+  selectedGroup = group;
+  selectedCollection = newCol;
+  selectedNote = newCol.notes[0] || null;
+  filteredGroups = getSortedGroups();
+  renderGroupTree(); renderCollections(); renderEditor(); renderTrash(); updateNavCounts();
+  showToast(`笔记集「${title}」已恢复到「${group.title}」`);
+  scheduleSyncToWorkspace();
+}
+
+// --- 笔记集三点菜单 ---
 function openCollectionContextMenu(btn) {
   if (!selectedCollection) return;
   closeAllContextMenus();
@@ -978,8 +1304,9 @@ function openCollectionContextMenu(btn) {
   menu.className = 'context-menu';
   menu.innerHTML = `
     <button data-ctx-action="add-note">新增笔记</button>
-    <button data-ctx-action="rename">重命名聚合体</button>
-    <button data-ctx-action="delete" class="ctx-danger">删除聚合体</button>
+    <button data-ctx-action="move-loose">移入零散笔记</button>
+    <button data-ctx-action="rename">重命名笔记集</button>
+    <button data-ctx-action="delete" class="ctx-danger">删除笔记集</button>
   `;
   positionContextMenu(menu, btn);
   document.body.appendChild(menu);
@@ -988,9 +1315,35 @@ function openCollectionContextMenu(btn) {
     if (!ctxAction) return;
     closeAllContextMenus();
     if (ctxAction === 'add-note') openCreateNoteModal();
+    else if (ctxAction === 'move-loose') moveCollectionToLoose();
     else if (ctxAction === 'rename') renameCollection();
     else if (ctxAction === 'delete') openDeleteCollectionModal();
   });
+}
+
+// --- 将整个笔记集的笔记移入零散笔记，并移除该笔记集 ---
+function moveCollectionToLoose() {
+  if (!selectedCollection) return;
+  const col = selectedCollection;
+  const count = col.notes.length;
+  const group = findGroupOfCollection(col.id);
+  if (!group) return;
+  col.notes.forEach(n => looseNotes.unshift({ id: genId('loose'), title: n.title, content: n.content }));
+  const idx = group.collections.findIndex(c => c.id === col.id);
+  if (idx >= 0) group.collections.splice(idx, 1);
+  // 重新选择：优先同主题下的相邻笔记集
+  if (group.collections.length > 0) {
+    selectedCollection = group.collections[Math.max(0, idx - 1)];
+    selectedNote = selectedCollection.notes[0] || null;
+  } else {
+    const og = groups.find(g => g.collections.length > 0);
+    if (og) { selectedGroup = og; selectedCollection = og.collections[0]; selectedNote = selectedCollection.notes[0] || null; }
+    else { selectedCollection = null; selectedNote = null; }
+  }
+  filteredGroups = getSortedGroups();
+  renderGroupTree(); renderCollections(); renderEditor(); renderLooseNotes(); renderLooseEditor(); updateNavCounts();
+  showToast(`「${col.title}」已移入零散笔记（${count} 篇）`);
+  scheduleSyncToWorkspace();
 }
 
 // --- 菜单位置定位 ---
@@ -1018,9 +1371,9 @@ document.addEventListener('click', e => {
 
 function renameCollection() {
   if (!selectedCollection) return;
-  const body = `<label>聚合体名称<input id="rn-title" maxlength="40" value="${escapeHtml(selectedCollection.title)}" /></label>`;
+  const body = `<label>笔记集名称<input id="rn-title" maxlength="40" value="${escapeHtml(selectedCollection.title)}" /></label>`;
   const footer = `<button class="cancel-button" id="rn-cancel">取消</button><button class="submit-button" id="rn-submit">保存</button>`;
-  openModal('重命名聚合体', body, footer);
+  openModal('重命名笔记集', body, footer);
   $('#rn-cancel').addEventListener('click', closeModal);
   $('#rn-submit').addEventListener('click', () => {
     const title = $('#rn-title').value.trim();
@@ -1035,7 +1388,7 @@ function renameCollection() {
   setTimeout(() => $('#rn-title').focus(), 50);
 }
 
-// 编辑器（聚合体）
+// 编辑器（笔记集）
 let saveSyncTimer = null;
 function scheduleSyncToWorkspace() {
   clearTimeout(saveSyncTimer);
@@ -1043,18 +1396,10 @@ function scheduleSyncToWorkspace() {
 }
 async function syncToWorkspace() {
   try {
-    const res = await fetch('/api/workspace', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({groups, looseNotes, trash})
-    });
-    if (!res.ok) {
-      console.error('Workspace sync failed:', res.status);
-    }
+    await window.api.sync({groups, looseNotes, trash});
   } catch (e) {
     console.error('Workspace sync error:', e);
   }
-}
 }
 $('#markdown-editor').addEventListener('input', e => {
   if (!selectedNote) return;
@@ -1108,26 +1453,19 @@ $('#trash-list').addEventListener('click', e => {
 });
 $('#btn-empty-trash').addEventListener('click', openEmptyTrashModal);
 
-// 零散笔记搜索
-$('#loose-search').addEventListener('input', e => {
-  const kw = e.target.value.trim().toLowerCase();
-  filteredLooseNotes = kw ? looseNotes.filter(n => `${n.title}${n.content}`.toLowerCase().includes(kw)) : looseNotes;
-  renderLooseNotes(filteredLooseNotes);
+// 零散笔记 / 回收站不再内置搜索框（独立搜索视图已覆盖 §4.1）
+
+// 全局搜索（独立视图）
+$('#global-search').addEventListener('input', e => runSearch(e.target.value));
+$('#global-search').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && searchResults.length) { e.preventDefault(); jumpToSearchResult(searchResults[0]); }
 });
-// 回收站搜索
-$('#trash-search').addEventListener('input', e => {
-  const kw = e.target.value.trim().toLowerCase();
-  filteredTrash = kw ? trash.filter(t => `${t.title}${t.content}`.toLowerCase().includes(kw)) : trash;
-  renderTrash(filteredTrash);
+$('#search-results').addEventListener('click', e => {
+  const card = e.target.closest('.search-result-card');
+  if (card) { const idx = Number(card.dataset.index); jumpToSearchResult(searchResults[idx]); }
 });
 
-// 聚合体搜索
-$('#search-input').addEventListener('input', e => {
-  const kw = e.target.value.trim().toLowerCase();
-  if (!kw) { filteredGroups = getSortedGroups(); renderGroupTree(); return; }
-  filteredGroups = getSortedGroups().map(g => ({ ...g, expanded: true, collections: g.collections.filter(c => `${c.title}${c.description}${c.notes.map(n => n.title + n.content).join('')}`.toLowerCase().includes(kw)) })).filter(g => g.collections.length > 0);
-  renderGroupTree();
-});
+// 笔记集视图不再内置搜索框（已有独立搜索视图 §4.1），相关过滤逻辑已移除
 
 // 按钮
 $('#add-collection').addEventListener('click', openCreateCollectionModal);
@@ -1145,10 +1483,17 @@ $('#sidebar-fab').addEventListener('click', () => {
   $('#sidebar-fab').classList.remove('visible');
 });
 
-// 深色模式
+// 三栏级联折叠（§4.7）：主题树 → 笔记集 → 编辑器，笔记集折叠须以主题树已折叠为前提
+// 三栏级联折叠（§4.7）：底部圆形开关 + 渐进式显隐
+$('#dock-collapse').addEventListener('click', dockCollapse);
+$('#dock-expand').addEventListener('click', dockExpand);
+
+// 深色模式（持久化）
 $('#theme-toggle').addEventListener('click', () => {
-  document.body.classList.toggle('dark');
-  showToast(document.body.classList.contains('dark') ? '已切换深色模式' : '已切换浅色模式');
+  settings.theme = document.body.classList.contains('dark') ? 'light' : 'dark';
+  applyTheme();
+  persistSettings();
+  showToast(settings.theme === 'dark' ? '已切换深色模式' : '已切换浅色模式');
 });
 
 // 键盘快捷键
@@ -1156,38 +1501,36 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault();
-    const activeView = document.querySelector('.view.active');
-    const search = activeView?.querySelector('input[type="search"]');
-    if (search) search.focus();
+    switchView('search');
+    setTimeout(() => $('#global-search').focus(), 0);
   }
+  // 三栏折叠快捷键（§4.7，受顺序约束）
+  if (e.altKey && (e.key === '1' || e.key === '!')) { e.preventDefault(); dockCollapse(); }
+  if (e.altKey && (e.key === '2' || e.key === '@')) { e.preventDefault(); dockExpand(); }
 });
 
 // ==================== 初始化 ====================
 async function init() {
-  // 先尝试从 workspace 加载
+  await loadSettingsState();
   try {
-    const res = await fetch('/api/workspace');
-    if (res.ok) {
-      const data = await res.json();
-      const hasData = (data.groups && data.groups.length > 0) ||
-                      (data.looseNotes && data.looseNotes.length > 0) ||
-                      (data.trash && data.trash.length > 0);
-      if (hasData) {
-        // workspace 有数据，加载它
-        groups.length = 0;
-        if (data.groups) data.groups.forEach(g => groups.push(g));
-        sortGroupsAZ();
-        looseNotes.length = 0;
-        if (data.looseNotes) data.looseNotes.forEach(n => looseNotes.push(n));
-        trash.length = 0;
-        if (data.trash) data.trash.forEach(t => trash.push(t));
-      } else {
-        // workspace 为空，把当前 demo 数据同步进去
-        await syncToWorkspace();
-      }
+    const data = await window.api.scan();
+    if (data.error) throw new Error(data.error);
+    const hasData = (data.groups && data.groups.length > 0) ||
+                    (data.looseNotes && data.looseNotes.length > 0) ||
+                    (data.trash && data.trash.length > 0);
+    if (hasData) {
+      groups.length = 0;
+      if (data.groups) data.groups.forEach(g => groups.push(g));
+      sortGroupsAZ();
+      looseNotes.length = 0;
+      if (data.looseNotes) data.looseNotes.forEach(n => looseNotes.push(n));
+      trash.length = 0;
+      if (data.trash) data.trash.forEach(t => trash.push(t));
+    } else {
+      await syncToWorkspace();
     }
   } catch (e) {
-    // 后端未启动或出错，保持 demo 数据
+    console.error('Init: workspace scan failed, using demo data');
   }
 
   // 设置初始选中状态
@@ -1201,6 +1544,41 @@ async function init() {
   renderCollections();
   renderEditor();
   updateNavCounts();
+
+  // 监听外部文件变更（agent 写文件 / 其它进程改工作区）→ 重新扫描并刷新界面。
+  // main.js sync() 已加固：仅删“有侧车且模型已移除”的文件/目录，外部 agent 新增内容会被保留。
+  if (window.api.onWorkspaceChanged) {
+    window.api.onWorkspaceChanged(async () => {
+      try {
+        // 先把还停在内存、未落盘的编辑写回磁盘，避免 rescan 用旧磁盘内容覆盖当前输入
+        if (saveSyncTimer) { clearTimeout(saveSyncTimer); await syncToWorkspace(); }
+        const data = await window.api.scan();
+        if (data.error) return;
+        if (data.groups) { groups.length = 0; data.groups.forEach(g => groups.push(g)); sortGroupsAZ(); }
+        if (data.looseNotes) { looseNotes.length = 0; data.looseNotes.forEach(n => looseNotes.push(n)); }
+        if (data.trash) { trash.length = 0; data.trash.forEach(t => trash.push(t)); }
+        filteredLooseNotes = looseNotes;
+        filteredTrash = trash;
+        filteredGroups = getSortedGroups();
+        // 重解析选中态：arrays 已被替换，旧引用失效，按 id 尽量保持原选中项
+        selectedGroup = groups.find(g => g.id === (selectedGroup && selectedGroup.id)) || groups[0] || null;
+        selectedCollection = selectedGroup
+          ? (selectedGroup.collections.find(c => c.id === (selectedCollection && selectedCollection.id)) || selectedGroup.collections[0] || null)
+          : null;
+        selectedNote = selectedCollection
+          ? (selectedCollection.notes.find(n => n.id === (selectedNote && selectedNote.id)) || selectedCollection.notes[0] || null)
+          : null;
+        selectedLooseNote = looseNotes.find(n => n.id === (selectedLooseNote && selectedLooseNote.id)) || null;
+        // 按当前视图刷新对应面板（避免只刷新笔记集视图而漏掉零散/回收站）
+        renderGroupTree();
+        renderCollections();
+        renderEditor();
+        if (currentView === 'loose') { renderLooseNotes(); renderLooseEditor(); }
+        else if (currentView === 'trash') { renderTrash(); }
+        updateNavCounts();
+      } catch (e) { console.error('workspace-changed handler error:', e); }
+    });
+  }
 }
 
 init();
