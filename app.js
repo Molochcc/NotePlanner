@@ -196,7 +196,7 @@ function openDeleteNoteModal(noteId, source) {
       renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
     }
     showToast('笔记已移入回收站');
-    scheduleSyncToWorkspace();
+    clearTimeout(saveSyncTimer); syncToWorkspace();
   });
 }
 
@@ -262,7 +262,7 @@ function openDeleteCollectionModal() {
       : choice === 'trash' ? '笔记集已删除，笔记已移入回收站'
       : '笔记集已放入回收站（保留结构，可恢复为笔记集）';
     showToast(toastMsg);
-    scheduleSyncToWorkspace();
+    clearTimeout(saveSyncTimer); syncToWorkspace();
   });
 }
 
@@ -644,21 +644,23 @@ function restoreNote(trashId) {
   looseNotes.unshift({ id: genId('loose'), title: item.title, content: item.content });
   renderTrash(); renderLooseNotes(); updateNavCounts();
   showToast('笔记已恢复到零散笔记');
-  scheduleSyncToWorkspace();
+  clearTimeout(saveSyncTimer); syncToWorkspace();
 }
 function permanentDelete(trashId) {
-  const idx = trash.findIndex(t => t.id === trashId);
-  if (idx < 0) return;
-  const body = `<p class="modal-text">确定永久删除 <b>"${escapeHtml(trash[idx].title)}"</b> 吗？</p><p class="modal-subtext">此操作无法撤销。</p>`;
+  const item = trash.find(t => t.id === trashId);
+  if (!item) return;
+  const body = `<p class="modal-text">确定永久删除 <b>"${escapeHtml(item.title)}"</b> 吗？</p><p class="modal-subtext">此操作无法撤销。</p>`;
   const footer = `<button class="cancel-button" id="pd-cancel">取消</button><button class="danger-button" id="pd-confirm">永久删除</button>`;
   openModal('永久删除', body, footer);
   $('#pd-cancel').addEventListener('click', closeModal);
   $('#pd-confirm').addEventListener('click', () => {
+    const idx = trash.findIndex(t => t.id === trashId);
+    if (idx < 0) { closeModal(); return; }
     trash.splice(idx, 1);
     closeModal();
     renderTrash(); updateNavCounts();
     showToast('已永久删除');
-    scheduleSyncToWorkspace();
+    clearTimeout(saveSyncTimer); syncToWorkspace();
   });
 }
 
@@ -741,6 +743,9 @@ function renderGroupTree(list = filteredGroups) {
 // 选定主题后，笔记集栏位展示该主题下的【所有】笔记集（逻辑修正：之前只渲染单个 selectedCollection）
 function renderCollections() {
   const list = $('#collections-list');
+  const _scrollMap = {};
+  $$('.notes-list').forEach(nl => { _scrollMap[nl.dataset.collection] = nl.scrollTop; });
+  const _containerScroll = list ? list.scrollTop : 0;
   if (!selectedGroup) {
     list.innerHTML = '<div class="empty-state">请从左侧主题视图中选择一个主题</div>';
     return;
@@ -781,6 +786,8 @@ function renderCollections() {
       <div class="collection-meta"><span>${col.updated}</span></div>
     </article>`;
   }).join('');
+  $$('.notes-list').forEach(nl => { const k = nl.dataset.collection; if (_scrollMap[k] != null) nl.scrollTop = _scrollMap[k]; });
+  if (list) list.scrollTop = _containerScroll;
 }
 
 // ==================== 编辑器渲染 ====================
@@ -852,6 +859,18 @@ function renderTrash(list = filteredTrash) {
 // ==================== Markdown ====================
 function markdownToHtml(markdown) {
   if (!markdown) return '';
+  try {
+    if (typeof window.markdownit === 'function') {
+      const md = window.__mdRenderer || (window.__mdRenderer = window.markdownit({ html: false, linkify: true, breaks: false }));
+      const raw = md.render(markdown || '');
+      if (typeof window.DOMPurify === 'object' && window.DOMPurify.sanitize) {
+        return window.DOMPurify.sanitize(raw);
+      }
+      return raw;
+    }
+  } catch (e) {
+    console.error('markdown render failed, falling back', e);
+  }
   const safe = escapeHtml(markdown);
   return safe.split('\n').map(line => {
     if (line.startsWith('### ')) return `<h4>${line.slice(4)}</h4>`;
@@ -1156,7 +1175,7 @@ function openLooseNoteContextMenu(btn) {
       selectedLooseNote = looseNotes[0] || null;
       renderLooseNotes(); renderLooseEditor(); updateNavCounts();
       showToast('笔记已移入回收站');
-    scheduleSyncToWorkspace();
+    clearTimeout(saveSyncTimer); syncToWorkspace();
     } else if (ctxAction === 'delete') {
       openDeleteLoosePermanentlyModal(note);
     }
@@ -1175,7 +1194,7 @@ function openDeleteLoosePermanentlyModal(note) {
     closeModal();
     renderLooseNotes(); renderLooseEditor(); updateNavCounts();
       showToast('笔记已彻底删除');
-      scheduleSyncToWorkspace();
+      clearTimeout(saveSyncTimer); syncToWorkspace();
   });
 }
 
@@ -1250,7 +1269,7 @@ function restoreTrashToCollection(item, targetCollection) {
   targetCollection.notesExpanded = true;
   renderTrash(); renderGroupTree(); renderCollections(); renderEditor(); updateNavCounts();
   showToast(`笔记已恢复到「${targetCollection.title}」`);
-  scheduleSyncToWorkspace();
+  clearTimeout(saveSyncTimer); syncToWorkspace();
 }
 
 // 回收站「整集」→ 选主题恢复为笔记集
@@ -1293,7 +1312,7 @@ function restoreTrashCollection(item, group) {
   filteredGroups = getSortedGroups();
   renderGroupTree(); renderCollections(); renderEditor(); renderTrash(); updateNavCounts();
   showToast(`笔记集「${title}」已恢复到「${group.title}」`);
-  scheduleSyncToWorkspace();
+  clearTimeout(saveSyncTimer); syncToWorkspace();
 }
 
 // --- 笔记集三点菜单 ---
@@ -1343,7 +1362,7 @@ function moveCollectionToLoose() {
   filteredGroups = getSortedGroups();
   renderGroupTree(); renderCollections(); renderEditor(); renderLooseNotes(); renderLooseEditor(); updateNavCounts();
   showToast(`「${col.title}」已移入零散笔记（${count} 篇）`);
-  scheduleSyncToWorkspace();
+  clearTimeout(saveSyncTimer); syncToWorkspace();
 }
 
 // --- 菜单位置定位 ---
