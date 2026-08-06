@@ -3,7 +3,10 @@ Thumbs.db
 *.log
 .dumate/
 .workspace.json
-workspace/
+workspace/*
+!workspace/AGENTS.md
+!workspace/noteplanner.rules.md
+workspace/.*
 test_workspace/
 .vscode/
 .idea/
