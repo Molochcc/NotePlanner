@@ -202,14 +202,52 @@
 .editor-actions button:hover{color:var(--accent)}
 .save-status{font:500 9px 'DM Mono',monospace;color:#71aa83;line-height:1}
 .editor-body{display:flex;flex:1;min-height:330px;min-width:0}
-.editor-body textarea,.markdown-preview{flex:1;min-width:0;width:100%;height:100%;min-height:330px;border:0;resize:none;outline:0;padding:25px;color:#636a7a;background:transparent;font:12px/1.9 'DM Mono',monospace}
-.markdown-preview{font-family:Manrope,Arial,sans-serif;overflow:auto;color:#72798a}
-.markdown-preview h1{font-size:21px;color:var(--ink);margin:0 0 20px}
-.markdown-preview h2{font-size:21px;color:var(--ink);margin:0 0 20px}
-.markdown-preview h3{font-size:14px;color:var(--ink);margin:25px 0 9px}
-.markdown-preview h4{font-size:12.5px;color:var(--ink);margin:18px 0 7px}
-.markdown-preview p,.markdown-preview li{font-size:12px;line-height:1.8}
+/* 字号档位（默认 small；fs-* 覆盖） */
+body{--fs-base:12px;--fs-h1:21px;--fs-h2:21px;--fs-h3:14px;--fs-h4:12.5px;--fs-line:1.9;--fs-edit:12px}
+body.fs-medium{--fs-base:14px;--fs-h1:24px;--fs-h2:24px;--fs-h3:16.5px;--fs-h4:14px;--fs-line:1.85;--fs-edit:14px}
+body.fs-large{--fs-base:16px;--fs-h1:28px;--fs-h2:28px;--fs-h3:19px;--fs-h4:16px;--fs-line:1.9;--fs-edit:16px}
+
+.editor-body textarea,.markdown-preview{flex:1;min-width:0;width:100%;height:100%;min-height:330px;border:0;resize:none;outline:0;padding:25px;color:#636a7a;background:transparent;font:var(--fs-edit)/var(--fs-line) 'DM Mono',monospace}
+.markdown-preview{font-family:Manrope,Arial,sans-serif;overflow:auto;color:#72798a;font-size:var(--fs-base);line-height:var(--fs-line)}
+.markdown-preview h1{font-size:var(--fs-h1);color:var(--ink);margin:0 0 20px}
+.markdown-preview h2{font-size:var(--fs-h1);color:var(--ink);margin:0 0 20px}
+.markdown-preview h3{font-size:var(--fs-h3);color:var(--ink);margin:25px 0 9px}
+.markdown-preview h4{font-size:var(--fs-h4);color:var(--ink);margin:18px 0 7px}
+.markdown-preview p,.markdown-preview li{font-size:var(--fs-base);line-height:var(--fs-line)}
 .markdown-preview a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(255,118,95,.4)}
+
+/* Obsidian 风格标注框 Callouts */
+.callout{border-radius:10px;margin:14px 0;padding:12px 14px;background:color-mix(in srgb,var(--co,#ff765f) 9%,transparent);border-left:3px solid var(--co,#ff765f)}
+.callout-title{font-family:Manrope,Arial,sans-serif;font-weight:700;font-size:var(--fs-base);color:var(--co,#ff765f);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.callout-body{color:#5b6271;font-size:var(--fs-base);line-height:var(--fs-line)}
+.callout-body>:first-child{margin-top:0}
+.callout-body>:last-child{margin-bottom:0}
+.callout-body table{font-size:var(--fs-base)}
+.callout.co-abstract{--co:#ff765f}
+.callout.co-note{--co:#ff765f}
+.callout.co-info{--co:#3b82f6}
+.callout.co-tip{--co:#10b981}
+.callout.co-example{--co:#0ea5e9}
+.callout.co-faq,.callout.co-question{--co:#8b5cf6}
+.callout.co-warning{--co:#f59e0b}
+.callout.co-danger{--co:#ef4444}
+.callout.co-success{--co:#22c55e}
+.callout.co-bug{--co:#ec4899}
+.callout.co-important{--co:#f97316}
+.callout.co-quote{--co:#64748b}
+.callout details,.callout summary{list-style:none}
+.callout summary{cursor:pointer;user-select:none}
+.callout summary::-webkit-details-marker{display:none}
+
+/* 字号快捷控件（三个 A） */
+.font-size-aaa{display:inline-flex;align-items:flex-end;gap:1px;padding:2px 5px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.dark .font-size-aaa{background:var(--surface)}
+.font-size-aaa .fs-a{border:0;background:none;cursor:pointer;color:#9aa0ae;line-height:1;padding:0 3px;font-family:Manrope,sans-serif;font-weight:800;transition:color .15s}
+.font-size-aaa .fs-a.a-sm{font-size:11px}
+.font-size-aaa .fs-a.a-md{font-size:14px;padding-bottom:1px}
+.font-size-aaa .fs-a.a-lg{font-size:18px;padding-bottom:3px}
+.font-size-aaa .fs-a:hover{color:var(--accent)}
+.font-size-aaa .fs-a.active{color:var(--accent)}
 .markdown-preview a:hover{color:#ff5a3c}
 .markdown-preview ul,.markdown-preview ol{padding-left:20px;margin:8px 0}
 .markdown-preview hr{border:0;border-top:1px solid var(--line);margin:18px 0}

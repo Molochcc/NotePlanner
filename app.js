@@ -394,10 +394,25 @@ async function loadSettingsState() {
     settings.theme = d.theme || 'light';
     settings.trashLimit = d.trashLimit || 30;
     settings.workspacePath = d.workspacePath || '';
+    settings.fontSize = d.fontSize || 'small';
   } catch (e) {}
   workspacePath = settings.workspacePath;
   applyTheme();
+  applyFontSize(settings.fontSize);
   applyPanelState();
+}
+
+// 字体大小 大/中/小：作用于预览区与编辑区
+function applyFontSize(size) {
+  document.body.classList.remove('fs-small', 'fs-medium', 'fs-large');
+  document.body.classList.add('fs-' + size);
+  document.querySelectorAll('[data-fs]').forEach(b => b.classList.toggle('active', b.dataset.fs === size));
+}
+function setFontSize(size) {
+  if (size !== 'small' && size !== 'medium' && size !== 'large') return;
+  settings.fontSize = size;
+  applyFontSize(size);
+  persistSettings();
 }
 
 // 主题与面板折叠的本地应用 + 持久化
@@ -523,6 +538,17 @@ function renderGeneralSettings() {
           <div class="seg" id="set-theme">
             <button data-theme="light" class="${settings.theme !== 'dark' ? 'active' : ''}">浅色</button>
             <button data-theme="dark" class="${settings.theme === 'dark' ? 'active' : ''}">深色</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">预览 / 编辑字号</div>
+            <div class="settings-desc">影响 Markdown 预览区与编辑区文字大小</div>
+          </div>
+          <div class="font-size-aaa" title="字体大小（小 / 中 / 大）">
+            <button type="button" data-fs="small" class="fs-a a-sm ${settings.fontSize === 'small' ? 'active' : ''}">A</button>
+            <button type="button" data-fs="medium" class="fs-a a-md ${settings.fontSize === 'medium' ? 'active' : ''}">A</button>
+            <button type="button" data-fs="large" class="fs-a a-lg ${settings.fontSize === 'large' ? 'active' : ''}">A</button>
           </div>
         </div>
         <div class="settings-row">
@@ -857,16 +883,184 @@ function renderTrash(list = filteredTrash) {
 }
 
 // ==================== Markdown ====================
+// --- Obsidian 标注框类型 → 中文标题 / 配色类 ---
+const CALLOUT_TYPES = {
+  abstract:  { title: '摘要', cls: 'co-abstract' },
+  info:      { title: '信息', cls: 'co-info' },
+  tip:       { title: '提示', cls: 'co-tip' },
+  example:   { title: '示例', cls: 'co-example' },
+  faq:       { title: '问答', cls: 'co-faq' },
+  question:  { title: '问答', cls: 'co-faq' },
+  warning:   { title: '警告', cls: 'co-warning' },
+  danger:    { title: '危险', cls: 'co-danger' },
+  note:      { title: '笔记', cls: 'co-note' },
+  quote:     { title: '引用', cls: 'co-quote' },
+  success:   { title: '成功', cls: 'co-success' },
+  bug:       { title: '缺陷', cls: 'co-bug' },
+  important: { title: '重点', cls: 'co-important' },
+};
+
+// --- 源码预处理：剔除 Obsidian 注释、双链转可读文字（不跳转）---
+function preprocessMarkdown(src) {
+  if (!src) return '';
+  let s = src;
+  s = s.replace(/%%[\s\S]*?%%/g, ''); // 隐藏 %%...%% 注释
+  s = s.replace(/\[\[([^\]]+)\]\]/g, (_, inner) => {
+    const pipe = inner.split('|');
+    const target = (pipe[0] || '').trim();
+    const alias = (pipe[1] || '').trim();
+    if (alias) return alias;
+    const h = target.indexOf('#');
+    const note = h >= 0 ? target.slice(0, h).trim() : target;
+    const head = h >= 0 ? target.slice(h + 1).trim() : '';
+    return head || note || target;
+  });
+  return s;
+}
+
+// --- KaTeX 数学公式（markdown-it 规则）---
+function mathInline(state, silent) {
+  if (state.src[state.pos] !== '$') return false;
+  let pos = state.pos + 1;
+  let match = -1;
+  while (pos < state.posMax) {
+    if (state.src[pos] === '\\') { pos += 2; continue; }
+    if (state.src[pos] === '$') { match = pos; break; }
+    if (state.src[pos] === '\n') break;
+    pos++;
+  }
+  if (match === -1) return false;
+  const content = state.src.slice(state.pos + 1, match);
+  if (!content.trim()) return false;
+  if (!silent) {
+    const token = state.push('math_inline', 'math', 0);
+    token.content = content;
+  }
+  state.pos = match + 1;
+  return true;
+}
+function mathBlock(state, start, end, silent) {
+  let pos = state.bMarks[start] + state.tShift[start];
+  let max = state.eMarks[start];
+  if (pos + 2 > max) return false;
+  if (state.src.slice(pos, pos + 2) !== '$$') return false;
+  pos += 2;
+  let firstLine = state.src.slice(pos, max);
+  if (silent) return true;
+  let found = false;
+  let lastLine = '';
+  if (firstLine.trim().endsWith('$$')) {
+    firstLine = firstLine.trim().slice(0, -2);
+    found = true;
+  }
+  let next = start;
+  while (!found) {
+    next++;
+    if (next >= end) break;
+    pos = state.bMarks[next] + state.tShift[next];
+    max = state.eMarks[next];
+    if (pos < max && state.tShift[next] < state.blkIndent) break;
+    const line = state.src.slice(pos, max);
+    if (line.trim().endsWith('$$')) {
+      lastLine = line.slice(0, line.trim().length - 2);
+      found = true;
+    } else {
+      firstLine += (firstLine ? '\n' : '') + line;
+    }
+  }
+  state.line = next + 1;
+  const token = state.push('math_block', 'math', 0);
+  token.block = true;
+  token.content = (firstLine && firstLine.trim() ? firstLine + '\n' : '') + lastLine;
+  token.map = [start, state.line];
+  return true;
+}
+function getMdRenderer() {
+  if (window.__mdRenderer) return window.__mdRenderer;
+  const md = window.markdownit({ html: false, linkify: true, breaks: false });
+  if (typeof window.katex === 'object') {
+    md.inline.ruler.after('escape', 'math_inline', mathInline);
+    md.block.ruler.before('fence', 'math_block', mathBlock, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
+    md.renderer.rules.math_inline = (tokens, idx) => {
+      try { return window.katex.renderToString(tokens[idx].content, { displayMode: false, throwOnError: false }); }
+      catch (e) { return '<code>' + escapeHtml(tokens[idx].content) + '</code>'; }
+    };
+    md.renderer.rules.math_block = (tokens, idx) => {
+      try { return window.katex.renderToString(tokens[idx].content, { displayMode: true, throwOnError: false }); }
+      catch (e) { return '<pre><code>' + escapeHtml(tokens[idx].content) + '</code></pre>'; }
+    };
+  }
+  window.__mdRenderer = md;
+  return md;
+}
+
+// --- 标注框：把 [!type] blockquote 转成 callout（支持折叠与嵌套）---
+function transformCallouts(root) {
+  const quotes = Array.from(root.querySelectorAll('blockquote'));
+  for (let i = quotes.length - 1; i >= 0; i--) {
+    const bq = quotes[i];
+    if (bq.closest('.callout')) continue;
+    const firstP = bq.querySelector(':scope > p');
+    if (!firstP) continue;
+    const txt = firstP.textContent.trim();
+    const mm = txt.match(/^\[!([a-zA-Z]+)\]/);
+    if (!mm) continue;
+    const type = mm[1].toLowerCase();
+    let rest = txt.slice(mm[0].length).trim();
+    let fold = '';
+    if (rest.startsWith('-')) { fold = '-'; rest = rest.slice(1).trim(); }
+    else if (rest.startsWith('+')) { fold = '+'; rest = rest.slice(1).trim(); }
+    const info = CALLOUT_TYPES[type] || { title: (type || '笔记'), cls: 'co-note' };
+    const titleText = rest || info.title;
+
+    const body = document.createElement('div');
+    body.className = 'callout-body';
+    Array.from(bq.childNodes).forEach(node => {
+      if (node === firstP) return; // 首段是标题行，整体排除出正文，避免与 header 重复
+      body.appendChild(node.cloneNode(true));
+    });
+
+    if (fold) {
+      const details = document.createElement('details');
+      details.className = 'callout ' + info.cls;
+      details.open = (fold === '-');
+      const summary = document.createElement('summary');
+      summary.className = 'callout-title';
+      summary.textContent = titleText;
+      details.appendChild(summary);
+      details.appendChild(body);
+      bq.replaceWith(details);
+    } else {
+      const callout = document.createElement('div');
+      callout.className = 'callout ' + info.cls;
+      const titleEl = document.createElement('div');
+      titleEl.className = 'callout-title';
+      titleEl.textContent = titleText;
+      callout.appendChild(titleEl);
+      callout.appendChild(body);
+      bq.replaceWith(callout);
+    }
+  }
+}
+
 function markdownToHtml(markdown) {
   if (!markdown) return '';
   try {
     if (typeof window.markdownit === 'function') {
-      const md = window.__mdRenderer || (window.__mdRenderer = window.markdownit({ html: false, linkify: true, breaks: false }));
-      const raw = md.render(markdown || '');
-      if (typeof window.DOMPurify === 'object' && window.DOMPurify.sanitize) {
-        return window.DOMPurify.sanitize(raw);
+      const md = getMdRenderer();
+      const src = preprocessMarkdown(markdown);
+      let html = md.render(src || '');
+      if (typeof document !== 'undefined' && typeof DOMParser !== 'undefined') {
+        try {
+          const doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html');
+          transformCallouts(doc.body.firstChild);
+          html = doc.body.firstChild.innerHTML;
+        } catch (e) { console.error('callout transform failed', e); }
       }
-      return raw;
+      if (typeof window.DOMPurify === 'object' && window.DOMPurify.sanitize) {
+        return window.DOMPurify.sanitize(html, { ADD_TAGS: ['details', 'summary'], ADD_ATTR: ['open'] });
+      }
+      return html;
     }
   } catch (e) {
     console.error('markdown render failed, falling back', e);
@@ -1436,6 +1630,12 @@ $('#preview-toggle').addEventListener('click', () => {
   preview.classList.toggle('hidden', previewing);
   editor.classList.toggle('hidden', !previewing);
   $('#preview-toggle').textContent = previewing ? '预览' : '编辑';
+});
+
+// 字号 大/中/小：编辑区顶部与设置面板共用，全局委托
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-fs]');
+  if (btn) setFontSize(btn.dataset.fs);
 });
 
 // 零散笔记列表

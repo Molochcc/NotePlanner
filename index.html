@@ -7,7 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=24" />
+  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="vendor/katex/katex.min.css" />
 </head>
 <body>
 <div class="app-shell">
@@ -49,7 +50,7 @@
           <div id="collections-list"></div>
         </section>
         <section class="editor-panel" id="editor-panel">
-          <div class="editor-header"><div><p class="eyebrow">MARKDOWN NOTE</p><h2 id="editor-title">选择一篇笔记</h2></div><div class="editor-actions"><span class="save-status" id="save-status">已保存</span><button id="preview-toggle">预览</button></div></div>
+          <div class="editor-header"><div><p class="eyebrow">MARKDOWN NOTE</p><h2 id="editor-title">选择一篇笔记</h2></div><div class="editor-actions"><span class="save-status" id="save-status">已保存</span><div class="font-size-aaa" title="字体大小（小 / 中 / 大）"><button type="button" data-fs="small" class="fs-a a-sm">A</button><button type="button" data-fs="medium" class="fs-a a-md">A</button><button type="button" data-fs="large" class="fs-a a-lg">A</button></div><button id="preview-toggle">预览</button></div></div>
           <div class="editor-body"><textarea id="markdown-editor" spellcheck="false" placeholder="选择一篇笔记后开始编辑 Markdown..."></textarea><article class="markdown-preview hidden" id="markdown-preview"></article></div>
           <div class="editor-footer"><span>支持 Markdown · 自动保存</span><span id="word-count">0 字</span></div>
         </section>
@@ -66,7 +67,7 @@
           <div id="loose-notes-list"></div>
         </section>
         <section class="editor-panel" id="loose-editor-panel">
-          <div class="editor-header"><div><p class="eyebrow">MARKDOWN NOTE</p><h2 id="loose-editor-title">选择一篇笔记</h2></div><div class="editor-actions"><span class="save-status" id="loose-save-status">已保存</span><button id="loose-preview-toggle">预览</button></div></div>
+          <div class="editor-header"><div><p class="eyebrow">MARKDOWN NOTE</p><h2 id="loose-editor-title">选择一篇笔记</h2></div><div class="editor-actions"><span class="save-status" id="loose-save-status">已保存</span><div class="font-size-aaa" title="字体大小（小 / 中 / 大）"><button type="button" data-fs="small" class="fs-a a-sm">A</button><button type="button" data-fs="medium" class="fs-a a-md">A</button><button type="button" data-fs="large" class="fs-a a-lg">A</button></div><button id="loose-preview-toggle">预览</button></div></div>
           <div class="editor-body"><textarea id="loose-markdown-editor" spellcheck="false" placeholder="选择一篇笔记后开始编辑 Markdown..."></textarea><article class="markdown-preview hidden" id="loose-markdown-preview"></article></div>
           <div class="editor-footer"><span>支持 Markdown · 自动保存</span><span id="loose-word-count">0 字</span></div>
         </section>
@@ -110,6 +111,7 @@
 
 <script src="vendor/markdown-it.min.js"></script>
 <script src="vendor/purify.min.js"></script>
-<script src="app.js?v=14"></script>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>
